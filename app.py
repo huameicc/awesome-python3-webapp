@@ -6,19 +6,21 @@ from aiohttp import web
 logging.basicConfig(level='INFO')
 
 
-def index(request):
+async def index(request):
     return web.Response(body=b'<h1>Awesome</h1>', content_type='text/html')
 
 
-@asyncio.coroutine
-def init(loop):
+async def init():
     app = web.Application()
-    app.router.add_route('GET', '/', index)
-    srv = yield from loop.create_server(app._make_handler(), '127.0.0.1', 9000)
+    app.router.add_routes([web.get('/', index)])
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '127.0.0.1', 9000)
+    await site.start()
     logging.info('server started at http://127.0.0.1:9000...')
-    return srv
 
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(init(loop))
-loop.run_forever()
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(init())
+    loop.run_forever()
