@@ -26,7 +26,7 @@ async def select(sql, args=None, size=None):
     with await __pool.acquire() as conn:
         cur = await conn.cursor(aiomysql.DictCursor)
         try:
-            await cur.execute(sql, args)
+            await cur.execute(sql.replace('?', '%s'), args)
             if size:
                 rs = await cur.fetchmany(size)
             else:
@@ -45,7 +45,7 @@ async def execute(sql, args=None):
     with await __pool.acquire() as conn:
         cur = await conn.cursor()
         try:
-            await cur.execute(sql, args)
+            await cur.execute(sql.replace('?', '%s'), args)
             affected = cur.rowcount
         except:
             raise
@@ -53,3 +53,48 @@ async def execute(sql, args=None):
             return affected
         finally:
             await cur.close()
+
+
+# orm Field
+class Field:
+    def __init__(self, name, column_type, default_value, primary_key):
+        self.name = name
+        self.column_type = column_type
+        self.primary_key = primary_key
+        self.default_value = default_value
+
+    def __str__(self):
+        return '%s.%s' % (self.__class__.__module__, self.__class__.__name__) \
+               + '(%s, %s' % (self.name, self.column_type) \
+               + (self.primary_key and ', PK' or '') \
+               + (self.default_value is not None and ', %s' % repr(self.default_value) or '') + ')'
+
+
+class IntegerField(Field):
+    def __init__(self, name, column_type='INT', default_value=None, primary_key=False):
+        super().__init__(name, column_type, primary_key, default_value)
+
+
+class FloatField(Field):
+    def __init__(self, name, column_type='FLOAT', default_value=None, primary_key=False):
+        super().__init__(name, column_type, default_value, primary_key)
+
+
+class StringField(Field):
+    def __init__(self, name, column_type='VARCHAR(255)', default_value=None, primary_key=False):
+        super().__init__(name, column_type, primary_key, default_value)
+
+
+class DateTimeField(Field):
+    def __init__(self, name, column_type='DATETIME', default_value=None, primary_key=False):
+        super().__init__(name, column_type, default_value, primary_key)
+
+
+class ModelMetaclass(type):
+    """Field 元类"""
+    def __new__(msc, name, bases, attrdic):
+
+        return super().__new__(msc, name, bases, attrdic)
+
+class Model(metaclass=ModelMetaclass):
+    def 
