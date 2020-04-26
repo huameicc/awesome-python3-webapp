@@ -3,6 +3,7 @@
 
 import aiomysql
 import logging
+import asyncio
 from datetime import datetime
 
 
@@ -42,7 +43,7 @@ async def select(sql, args=None, size=None):
 
 
 async def execute(sql, args=None):
-    sqllog(sql)
+    sqllog(sql, args)
     with await __pool.acquire() as conn:
         cur = await conn.cursor()
         try:
@@ -85,7 +86,7 @@ class Field:
 
 class IntegerField(Field):
     def __init__(self, name, column_type='INT', default=None, primary_key=False):
-        super().__init__(name, column_type, primary_key, default)
+        super().__init__(name, column_type, default, primary_key)
 
 
 class FloatField(Field):
@@ -95,7 +96,7 @@ class FloatField(Field):
 
 class StringField(Field):
     def __init__(self, name, column_type='VARCHAR(255)', default=None, primary_key=False):
-        super().__init__(name, column_type, primary_key, default)
+        super().__init__(name, column_type, default, primary_key)
 
 
 class DateTimeField(Field):
@@ -148,19 +149,24 @@ class ModelMetaclass(type):
         attrdic['__insert__'] = 'insert into %s (%s) values (%s)' % (escape(tbname)
                                                                      , ', '.join(map(escape, map(tbfield, all_fields)))
                                                                      , ', '.join('?' * len(all_fields)))
-        attrdic['__update__'] = 'update %s set %s where' % (escape(tbname)
+        attrdic['__update__'] = 'update %s set %s' % (escape(tbname)
                                                            ,', '.join(map(lambda f: '`%s`=?' % f, fields)))
-        attrdic['__deletesql__'] = 'delete from %s where' % (escape(tbname))
+        attrdic['__remove__'] = 'delete from %s' % (escape(tbname))
         return super().__new__(mcs, name, bases, attrdic)
 
 
 class Model(metaclass=ModelMetaclass):
-    __table__, __primarykey__, __select__, __insert__, __update__, __deletesql__ = [None] * 6
+    __table__, __primarykey__, __select__, __insert__, __update__, __remove__ = [None] * 6
     __backmappings__, __mappings__, __fields__, __allfields__ = [[]] * 4
 
     def __init__(self, **kwargs):
-        for k, v in self.__allfields__.items():
+        print('init', self.__allfields__)
+        for k in self.__allfields__:
             setattr(self, k, kwargs.get(k))
+
+    def __str__(self):
+        return str(type(self))[8:-2] + \
+               '(%s)' % ', '.join(map(lambda _k: '%s=%s' % (_k, repr(self.__dict__[_k])), sorted(self.__dict__)))
 
     @classmethod
     def parse_value(cls, key, value):
@@ -180,10 +186,6 @@ class Model(metaclass=ModelMetaclass):
                 logging.warning('%s is not a field of %s' %(k, cls.__table__))
             kw[key] = cls.parse_value(v)
         return cls(**kw)
-
-    def __str__(self):
-        return str(type(self))[8:-2] + \
-               '(%s)' % ', '.join(map(lambda _k: '%s=%s' % (_k, repr(self.__dict__[_k])), sorted(self.__dict__)))
 
     @classmethod
     def fieldname(cls, key):
@@ -211,45 +213,130 @@ class Model(metaclass=ModelMetaclass):
         return self.__mappings__.get(key).format(val)
 
     @classmethod
-    async def find(cls, primary):
-        """根据主键寻找"""
+    def _sql_condition(cls, **kwargs):
+        """
+        where conditon
+        :param kwargs: where condition
+        :return: where_condition_sql, args_for_condition
+        """
+        _sql = ' where %s' % ' and '.join(map(lambda f: '`%s`=?' % cls.fieldname(f), kwargs.keys())) if kwargs else ''
+        _args = tuple(cls.format_value(k, v) for k, v in kwargs.items())
+        return _sql, _args
+
+    @classmethod
+    def _sql_condition_pk(cls, primary):
         if not cls.__primarykey__:
             raise RuntimeError('%s has no primary key' % cls)
-        rs = await select(cls.__select__ + ' where `%s`=?;' % cls.__primarykey__
-                          , (cls.format_value(cls.__primarykey__, primary),)
-                          , 1)
+        dic = dict()
+        dic[cls.__primarykey__] = primary
+        return cls._sql_condition(**dic)
+
+    @classmethod
+    def _sql_order(cls, orders):
+        """
+        order by
+        :param orders: tuple list, (field, 1/0), 1: asc, 0 desc
+        :return:
+        """
+        return ' order by %s' % ', '.join(map(lambda t: '`%s` %s' % (cls.fieldname(t[0]), 'asc' if t[1] else 'desc')
+                                              , orders)) if orders else ''
+
+    @classmethod
+    async def find(cls, primary):
+        """根据主键寻找"""
+        where_sql, where_args = cls._sql_condition_pk(primary)
+        rs = await select(cls.__select__ + where_sql + ';', args=where_args, size=1)
         return rs and cls.__initfromdb__(**rs[0]) or None
 
     @classmethod
-    async def findby(cls, orders=None, **kwargs):
+    async def find_by(cls, orders=None, **kwargs):
         """
         where 查询
         :param orders:  tuple list, (field, 1/0), 1: asc, 0 desc
         :param kwargs: where condition
         :return:
         """
-        _sql = cls.__select__
-        if kwargs:
-            _sql += ' where %s' % ' and '.join(map(lambda f: '`%s`=?' % cls.fieldname(f), kwargs.keys()))
-        if orders:
-            _sql += ' order by %s' % \
-                    ', '.join(map(lambda t: '`%s` %s' % (cls.fieldname(t[0]), 'asc' if t[1] else 'desc'), orders))
-        args = tuple(cls.format_value(k, v) for k, v in kwargs.items())
-        rs = await select(_sql, args=args)
+        where_sql, where_args = cls._sql_condition(**kwargs)
+        order_sql = cls._sql_order(orders)
+        rs = await select(cls.__select__ + where_sql + order_sql + ';', args=where_args)
         return [cls.__initfromdb__(**_r) for _r in rs]
 
+    @classmethod
+    async def find_count(cls, **kwargs):
+        """ count(*) by where-condition"""
+        if not cls.__primarykey__:
+            raise RuntimeError('%s has no primary key' % cls)
+        where_sql, where_args = cls._sql_condition(**kwargs)
+        rs = await select('select count(*) c from `%s`%s;' % (cls.__table__, where_sql), args=where_args, size=1)
+        return rs[0].get('c') if rs else 0
 
-    async def save(self):
-        """save new """
+    async def insert(self):
+        """insert new item"""
         args = list(map(self.getvalue_ordefault, self.__allfields__))
-        affected = await execute(self.__insert__, args)
+        affected = await execute(self.__insert__ + ';', args)
         if affected != 1:
-            logging.warning('<%s object> save error: %s rows affected.') % (self.__class__.__name__, affected)
+            logging.warning('<%s object> insert error: %s rows affected.') % (self.__class__.__name__, affected)
+        return affected
+
+    async def update(self):
+        """update by pk"""
+        if not self.__primarykey__:
+            raise RuntimeError('%s has no primary key' % self.__class__)
+        where_sql, where_args = self._sql_condition_pk(getattr(self, self.__primarykey__))
+        args = list(map(self.getvalue_ordefault, self.__fields__))
+        affected = await execute(self.__update__ + where_sql + ';', args=args + list(where_args))
+        if affected != 1:
+            logging.warning('<%s object> update error: %s rows affected.') % (self.__class__.__name__, affected)
+        return affected
+
+    @classmethod
+    async def update_by(cls, set_dict, where_dict):
+        """
+        update by where-condition
+        :param set_dict: set key=value, ..
+        :param where_dict: where key=value and ..
+        :return:
+        """
+        if not set_dict:
+            return 0
+        where_sql, where_args = cls._sql_condition(**where_dict)
+        update_sql = 'update `%s` set %s' %(cls.__table__, ', '.join(map(lambda k: '`%s`=?' % k, set_dict)))
+        set_args = tuple(cls.format_value(k, v) for k, v in set_dict.items())
+        affected = await execute(update_sql + where_sql + ';', args=set_args + where_args)
+        return affected
+
+    async def remove(self):
+        """delete by pk"""
+        if not self.__primarykey__:
+            raise RuntimeError('%s has no primary key' % self.__class__)
+        where_sql, where_args = self._sql_condition_pk(getattr(self, self.__primarykey__))
+        affected = await execute(self.__remove__ + where_sql + ';', args=where_args)
+        if affected != 1:
+            logging.warning('<%s object> remove error: %s rows affected.') % (self.__class__.__name__, affected)
+        return affected
+
+    @classmethod
+    async def remove_by(cls, **kwargs):
+        """delete by where-condition"""
+        where_sql, where_args = cls._sql_condition(**kwargs)
+        affected = await execute(cls.__remove__ + where_sql + ';', args=where_args)
         return affected
 
 
-# class TM(Model):
-#     __table__ = 'TMTABLE'
-#     id = IntegerField('ID')
-#
-# print(TM.id)
+if __name__ == '__main__':
+    logging.basicConfig(level='DEBUG')
+
+    class TM(Model):
+        __table__ = 'TMTABLE'
+        id = IntegerField('ID', primary_key=True)
+        name = IntegerField('NAME')
+
+    async def main():
+        tm = TM(id=1, name='Jim')
+        print(tm)
+        # await tm.insert()
+        # await tm.update()
+        # await tm.remove()
+        # await TM.find(2)
+
+    asyncio.run(main())
