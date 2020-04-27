@@ -7,8 +7,14 @@ import asyncio
 from datetime import datetime
 
 
+__pool = None
+
+
 def sqllog(sql, args=None):
-    logging.info('SQL:%s' % sql + (' ,Args:%s' % (args,) if args else ''))
+    if logging.getLogger().level == logging.DEBUG:
+        logging.warning('SQL:%s' % sql + (' ARG:%s' % (str(args)[:255],) if args else ''))
+    else:
+        logging.info('SQL:%s' % sql)
 
 
 async def create_pool(user, password, db, **kw):
@@ -23,9 +29,15 @@ async def create_pool(user, password, db, **kw):
     __pool = await aiomysql.create_pool(user=user, password=password, db=db, **kw)
 
 
+async def close_pool():
+    if __pool:
+        __pool.close()
+        await __pool.wait_closed()
+
+
 async def select(sql, args=None, size=None):
     sqllog(sql, args)
-    with await __pool.acquire() as conn:
+    async with __pool.acquire() as conn:
         cur = await conn.cursor(aiomysql.DictCursor)
         try:
             await cur.execute(sql.replace('?', '%s'), args)
@@ -44,7 +56,7 @@ async def select(sql, args=None, size=None):
 
 async def execute(sql, args=None):
     sqllog(sql, args)
-    with await __pool.acquire() as conn:
+    async with __pool.acquire() as conn:
         cur = await conn.cursor()
         try:
             await cur.execute(sql.replace('?', '%s'), args)
@@ -85,22 +97,32 @@ class Field:
 
 
 class IntegerField(Field):
-    def __init__(self, name, column_type='INT', default=None, primary_key=False):
+    def __init__(self, name='', column_type='BIGINT', default=None, primary_key=False):
+        super().__init__(name, column_type, default, primary_key)
+
+
+class BoolField(Field):
+    def __init__(self, name='', column_type='BOOLEAN', default=None, primary_key=False):
         super().__init__(name, column_type, default, primary_key)
 
 
 class FloatField(Field):
-    def __init__(self, name, column_type='FLOAT', default=None, primary_key=False):
+    def __init__(self, name='', column_type='DOUBLE', default=None, primary_key=False):
         super().__init__(name, column_type, default, primary_key)
 
 
 class StringField(Field):
-    def __init__(self, name, column_type='VARCHAR(255)', default=None, primary_key=False):
+    def __init__(self, name='', column_type='VARCHAR(255)', default=None, primary_key=False):
         super().__init__(name, column_type, default, primary_key)
 
 
+class TextField(Field):
+    def __init__(self, name='', column_type='MEDIUMTEXT', default=None):
+        super().__init__(name, column_type, default, primary_key=False)
+
+
 class DateTimeField(Field):
-    def __init__(self, name, column_type='DATETIME', default=None, primary_key=False):
+    def __init__(self, name='', column_type='DATETIME', default=None, primary_key=False):
         super().__init__(name, column_type, default, primary_key)
 
     @staticmethod
@@ -160,7 +182,6 @@ class Model(metaclass=ModelMetaclass):
     __backmappings__, __mappings__, __fields__, __allfields__ = [[]] * 4
 
     def __init__(self, **kwargs):
-        print('init', self.__allfields__)
         for k in self.__allfields__:
             setattr(self, k, kwargs.get(k))
 
@@ -184,7 +205,7 @@ class Model(metaclass=ModelMetaclass):
             key = cls.__backmappings__.get(k)
             if not key:
                 logging.warning('%s is not a field of %s' %(k, cls.__table__))
-            kw[key] = cls.parse_value(v)
+            kw[key] = cls.parse_value(key, v)
         return cls(**kw)
 
     @classmethod
@@ -322,6 +343,14 @@ class Model(metaclass=ModelMetaclass):
         affected = await execute(cls.__remove__ + where_sql + ';', args=where_args)
         return affected
 
+    @classmethod
+    def _create_table_sql(cls):
+        sql = 'create table `%s` (\n  ' % cls.__table__
+        sql += ',\n  '.join(map(lambda f: '`%s` %s not null' % (cls.fieldname(f), cls.__mappings__[f].column_type)
+                                  , cls.__allfields__))
+        sql += ',\n  primary key(`%s`)' % cls.__primarykey__ if cls.__primarykey__ else ''
+        sql += '\n) engine=innodb default charset=utf8mb4;'
+        return sql
 
 if __name__ == '__main__':
     logging.basicConfig(level='DEBUG')
@@ -334,7 +363,7 @@ if __name__ == '__main__':
     async def main():
         tm = TM(id=1, name='Jim')
         print(tm)
-        # await tm.insert()
+        await tm.insert()
         # await tm.update()
         # await tm.remove()
         # await TM.find(2)
