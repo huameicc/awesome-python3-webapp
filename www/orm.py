@@ -127,10 +127,14 @@ class DateTimeField(Field):
 
     @staticmethod
     def format(value):
+        if value is None:
+            return value
         return datetime.strftime(value, '%Y-%m-%d %H:%M:%S')
 
     @staticmethod
     def parse(value):
+        if value is None:
+            return value
         return datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
 
 
@@ -171,8 +175,8 @@ class ModelMetaclass(type):
         attrdic['__insert__'] = 'insert into %s (%s) values (%s)' % (escape(tbname)
                                                                      , ', '.join(map(escape, map(tbfield, all_fields)))
                                                                      , ', '.join('?' * len(all_fields)))
-        attrdic['__update__'] = 'update %s set %s' % (escape(tbname)
-                                                           ,', '.join(map(lambda f: '`%s`=?' % f, fields)))
+        attrdic['__update__'] = 'update %s set %s' % (escape(tbname),
+                                                      ', '.join(map(lambda f: '`%s`=?' % f, map(tbfield, fields))))
         attrdic['__remove__'] = 'delete from %s' % (escape(tbname))
         return super().__new__(mcs, name, bases, attrdic)
 
@@ -358,12 +362,13 @@ if __name__ == '__main__':
     class TM(Model):
         __table__ = 'TMTABLE'
         id = IntegerField('ID', primary_key=True)
-        name = IntegerField('NAME')
+        name = StringField('NAME')
+        dt = DateTimeField('DateTime')
 
     async def main():
-        tm = TM(id=1, name='Jim')
+        tm = TM(id=1, name='Jim', dt=datetime.now())
         print(tm)
-        await tm.insert()
+        # await tm.insert()
         # await tm.update()
         # await tm.remove()
         # await TM.find(2)
