@@ -8,11 +8,13 @@ from www.aioweb import scan_add_routes
 logging.basicConfig(level='INFO')
 
 
+@web.middleware
 async def log_middleware(request, handler):
     logging.info('%s %s' % (request.method, request.path))
     return await handler(request)
 
 
+@web.middleware
 async def resp_middleware(request, handler):
     resp = await handler(request)
     if isinstance(resp, web.StreamResponse):
