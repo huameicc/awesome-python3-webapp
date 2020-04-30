@@ -23,6 +23,12 @@ import logging
 import inspect
 import asyncio
 
+import os
+from aiohttp import web
+from aiohttp.abc import Request
+
+from api import ApiError
+
 
 def template(template_name):
     def decorator(func):
@@ -78,15 +84,50 @@ class RequestHandler:
         self._kwargs, self._required_kwargs, self._has_var_kwarg = _resolve_kwargs(func)
         self._has_request_arg = _has_request_arg(func)
 
-    async def __call__(self, request):
+    async def __call__(self, request: Request):
         kw = dict()
+        # 有key_word，才去解析参数值
+        # 需留意有参数时，POST只能接受3种Conten-Type
+        if self._kwargs or self._has_var_kwarg:
+            if request.method == 'GET':
+                kw = dict(**request.query)
+            if request.method == 'POST':
+                if not request.content_type:
+                    raise web.HTTPBadRequest(reason='Can\'t find Content-Type.')
+                ct = request.content_type.lower()
+                if ct.startswith('application/json'):
+                    data = await request.json()
+                    if not isinstance(data, dict):
+                        raise web.HTTPBadRequest(reason='json data must be a dict.')
+                    kw = data
+                elif ct.startswith(('application/x-www-form-urlencoded', 'multipart/form-data')):
+                    data = await request.post()
+                    kw = dict(**data)
+                else:
+                    raise web.HTTPBadRequest(reason='Context-Type not supported: %s' % request.content_type)
+        # key冲突时，match_info 优先使用。
+        for k, v in request.match_info.items():
+            if k in kw:
+                continue
+                # logging.warning('duplicate key for param from request.the one in match_info used. %s' % k)
+            kw[k] = v
+        # 如果没有var_keyword, 去除冗余参数
         if not self._has_var_kwarg:
             kwargs = dict()
             for k in self._kwargs:
                 if k in kw:
                     kwargs[k] = kw[k]
             kw = kwargs
-
+        # 检查无default参数
+        for k in self._required_kwargs:
+            if k not in kw:
+                raise web.HTTPBadRequest(reason='parameter %s lost.' % k)
+        if self._has_request_arg:
+            kw['request'] = request
+        try:
+            return await self._func(**kw)
+        except ApiError as e:
+            return dict(error=e.error, data=e.data, message=e.msg)
 
 
 def add_route(app, func):
@@ -126,6 +167,12 @@ def scan_add_routes(app, modpath):
                 logging.warning('function in %s not decorated by @post or @get :%s' % (modpath, fun))
             continue
         add_route(app, fun)
+
+
+def add_static(app:web.Application):
+    static_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+    app.router.add_static(r'/static/', static_path)
+    logging.info('add /static/ to %s' % static_path)
 
 
 if __name__ == '__main__':
