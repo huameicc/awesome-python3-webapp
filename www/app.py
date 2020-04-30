@@ -2,7 +2,7 @@ import asyncio, os, json, time
 import logging
 import functools
 from aiohttp import web
-from www.aioweb import scan_add_routes
+from aioweb import scan_add_routes
 
 
 logging.basicConfig(level='INFO')
@@ -50,7 +50,7 @@ async def index(request):
 async def init():
     app = web.Application(middlewares=[log_middleware, resp_middleware])
     app.router.add_routes([web.get('/', index)])
-    scan_add_routes(app, 'www.handler')
+    scan_add_routes(app, 'handler')
     init_jinja2_template()
     runner = web.AppRunner(app)
     await runner.setup()

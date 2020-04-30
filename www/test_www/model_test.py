@@ -9,8 +9,8 @@
 
 import logging
 import asyncio
-from www import orm
-from www.model import User, Blog, Comment
+import orm
+from model import User, Blog, Comment
 
 
 async def test():

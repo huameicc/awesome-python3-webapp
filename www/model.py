@@ -12,7 +12,7 @@ def generate_id():
 
 
 import time, uuid
-from www.orm import Model, StringField, IntegerField, FloatField, BoolField, TextField
+from orm import Model, StringField, IntegerField, FloatField, BoolField, TextField
 
 
 class User(Model):
