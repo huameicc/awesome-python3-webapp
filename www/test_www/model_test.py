@@ -16,7 +16,7 @@ from model import User, Blog, Comment
 async def test():
     await orm.create_pool('wwwdata', 'wwwdata', 'awesome')
     try:
-        u = User(name='Test1', email='test1@test.com', passwd='123456', image='about:blank')
+        u = User(name='Test', email='test@hello.com', passwd='666666', image='about:blank')
         logging.debug(await u.insert())
     except BaseException as e:
         logging.error(e)

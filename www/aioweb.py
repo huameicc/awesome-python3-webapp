@@ -69,7 +69,7 @@ def _resolve_kwargs(func):
 
 def _has_request_arg(func):
     sig = inspect.signature(func)
-    for i, (name, para) in enumerate(sig.items()):
+    for i, (name, para) in enumerate(sig.parameters.items()):
         if name == 'request' and para.kind in (inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.KEYWORD_ONLY):
             if i != 0:
                 raise RuntimeError('request must be the first param for a handler if used. %s%s' % (func.__name__, sig))

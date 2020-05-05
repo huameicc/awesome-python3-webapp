@@ -3,8 +3,10 @@ import datetime
 import logging
 import functools
 from jinja2 import Environment, FileSystemLoader
-
 from aiohttp import web
+
+import orm
+from config import configs as cfgs
 from aioweb import scan_add_routes, add_static
 
 
@@ -45,7 +47,7 @@ def init_jinja2_template(app, template='templates', **kwargs):
     logging.info('init jinja2...')
     option = dict(
         autoescape = kwargs.pop('autoescape', True),
-        auto_reload = kwargs.pop('autoescape', False)
+        auto_reload = kwargs.pop('autoreload', True)
     )
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), template)
     logging.info('set FileSystemLoader: %s' % path)
@@ -78,8 +80,10 @@ async def index(request: web.Request):
 
 
 async def init():
+    await orm.create_pool(user=cfgs.db.user, password=cfgs.db.passwd, db=cfgs.db.database, host=cfgs.db.host,
+                          port=cfgs.db.port)
     app = web.Application(middlewares=[log_middleware, resp_middleware])
-    app.router.add_routes([web.get('/', index)])
+    # app.router.add_routes([web.get('/', index)])
     scan_add_routes(app, 'handler')
     add_static(app)
     init_jinja2_template(app, filters=dict(datetime=datetimeflt))
