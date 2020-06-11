@@ -173,8 +173,8 @@ class ModelMetaclass(type):
         escape = lambda f: '`%s`' % f
         attrdic['__select__'] = 'select %s from %s' % (', '.join(map(escape, map(tbfield, all_fields))), escape(tbname))
         attrdic['__insert__'] = 'insert into %s (%s) values (%s)' % (escape(tbname)
-                                                                     , ', '.join(map(escape, map(tbfield, fields)))
-                                                                     , ', '.join('?' * len(fields)))
+                                                                     , ', '.join(map(escape, map(tbfield, all_fields)))
+                                                                     , ', '.join('?' * len(all_fields)))
         attrdic['__update__'] = 'update %s set %s' % (escape(tbname),
                                                       ', '.join(map(lambda f: '`%s`=?' % f, map(tbfield, fields))))
         attrdic['__remove__'] = 'delete from %s' % (escape(tbname))
@@ -297,7 +297,7 @@ class Model(metaclass=ModelMetaclass):
 
     async def insert(self):
         """insert new item"""
-        args = list(map(self.getvalue_ordefault, self.__fields__))
+        args = list(map(self.getvalue_ordefault, self.__allfields__))
         affected = await execute(self.__insert__ + ';', args)
         if affected != 1:
             logging.warning('<%s object> insert error: %s rows affected.') % (self.__class__.__name__, affected)
