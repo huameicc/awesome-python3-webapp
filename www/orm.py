@@ -12,7 +12,7 @@ __pool = None
 
 def sqllog(sql, args=None):
     if logging.getLogger().level == logging.DEBUG:
-        logging.warning('SQL:%s' % sql + (' ARG:%s' % (str(args)[:255],) if args else ''))
+        logging.debug('SQL:%s' % sql + (' ARG:%s' % (str(args)[:255],) if args else ''))
     else:
         logging.info('SQL:%s' % sql)
 
@@ -173,8 +173,8 @@ class ModelMetaclass(type):
         escape = lambda f: '`%s`' % f
         attrdic['__select__'] = 'select %s from %s' % (', '.join(map(escape, map(tbfield, all_fields))), escape(tbname))
         attrdic['__insert__'] = 'insert into %s (%s) values (%s)' % (escape(tbname)
-                                                                     , ', '.join(map(escape, map(tbfield, all_fields)))
-                                                                     , ', '.join('?' * len(all_fields)))
+                                                                     , ', '.join(map(escape, map(tbfield, fields)))
+                                                                     , ', '.join('?' * len(fields)))
         attrdic['__update__'] = 'update %s set %s' % (escape(tbname),
                                                       ', '.join(map(lambda f: '`%s`=?' % f, map(tbfield, fields))))
         attrdic['__remove__'] = 'delete from %s' % (escape(tbname))
@@ -297,7 +297,7 @@ class Model(metaclass=ModelMetaclass):
 
     async def insert(self):
         """insert new item"""
-        args = list(map(self.getvalue_ordefault, self.__allfields__))
+        args = list(map(self.getvalue_ordefault, self.__fields__))
         affected = await execute(self.__insert__ + ';', args)
         if affected != 1:
             logging.warning('<%s object> insert error: %s rows affected.') % (self.__class__.__name__, affected)
@@ -325,7 +325,8 @@ class Model(metaclass=ModelMetaclass):
         if not set_dict:
             return 0
         where_sql, where_args = cls._sql_condition(**where_dict)
-        update_sql = 'update `%s` set %s' %(cls.__table__, ', '.join(map(lambda k: '`%s`=?' % k, set_dict)))
+        update_sql = 'update `%s` set %s' %(cls.__table__,
+                                            ', '.join(map(lambda k: '`%s`=?' % cls.fieldname(k), set_dict)))
         set_args = tuple(cls.format_value(k, v) for k, v in set_dict.items())
         affected = await execute(update_sql + where_sql + ';', args=set_args + where_args)
         return affected
