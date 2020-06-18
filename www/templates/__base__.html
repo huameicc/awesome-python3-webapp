@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   {% block meta %}{% endblock %}
-  <title>{% block title %} this is title {% endblock %}}</title>
+  <title>{% block title %} this is title {% endblock %}</title>
   <link rel="stylesheet" href="/static/css/uikit.min.css">
   <script src="/static/js/jquery-3.5.1.min.js" defer></script>
   <script src="/static/js/uikit.min.js" defer></script>
@@ -14,15 +14,15 @@
     <div class="uk-container uk-container-center">
       <a href="/" class="uk-navbar-brand">Awesome-Blog</a>
       <ul class="uk-navbar-nav">
-        <li data-url="blogs"><a href="/"><i class="uk-icon-home"></i>Blog</a></li>
-        <li><a target="_blank" href="#"><i class="uk-icon-book"></i>Tutorial</a></li>
-        <li><a target="_blank" href="#"><i class="uk-icon-code"></i>Code</a></li>
+        <li data-url="blogs"><a href="/"><i class="uk-icon-home"></i> Blog</a></li>
+        <li><a target="_blank" href="#"><i class="uk-icon-book"></i> Tutorial</a></li>
+        <li><a target="_blank" href="#"><i class="uk-icon-code"></i> Code</a></li>
       </ul>
       <div class="uk-navbar-flip">
         <nav class="uk-navbar-nav">
           {% if user %}
           <li class="uk-parent" data-uk-dropdown>
-            <a href><i class="uk-icon-user"></i>{% user.name %}</a>
+            <a href><i class="uk-icon-user"></i>{{ user.name }}</a>
             <div class="uk-dropdown uk-dropdown-navbar uk-dropdown-bottom">
               <ul class="uk-nav uk-nav-navbar">
                 <li><a href="/signout"><i class="uk-icon-sign-out"></i>退出</a></li>
@@ -31,28 +31,33 @@
           </li>
           {% else %}
           <li><a href="/signin"><i class="uk-icon-sign-in"></i>登录</a></li>
-          <li><a href="/signup"><i class="uk-icon-user-plus"</a></li>
+          <li><a href="/signup"><i class="uk-icon-user-plus"></i></a></li>
           {% endif %}
         </nav>
       </div>
     </div>
   </nav>
 
-  <div class="uk-container uk-container-center">
-    {% block content %}{% endblock %}
-  </div>
-
-  <div class="uk-margin-large-top" style="background-color: #eee; border-top: 1px solid #ccc;">
-    <div class="uk-container uk-container-center uk-text-center uk-margin">
-      <p>
-        <a target="_blank" href="#" class="uk-icon-button uk-icon-weibo"></a>
-        <a target="_blank" href="#" class="uk-icon-button uk-icon-github"></a>
-        <a target="_blank" href="#" class="uk-icon-button uk-icon-instagram"></a>
-        <a target="_blank" href="#" class="uk-icon-button uk-icon-twitter"></a>
-      </p>
-      <p>Powerd by <a href="#">Awesome Python Webapp</a>. Copyright &copy; 2020.</p>
-      <p>All Rights Reserverd.</p>
+  <main>
+    <div class="uk-container uk-container-center">
+      {% block content %}{% endblock %}
     </div>
-  </div>
+  </main>
+
+  <footer>
+    <div class="uk-margin-large-top" style="background-color: #eee; border-top: 1px solid #ccc;">
+      <div class="uk-container uk-container-center uk-text-center uk-margin">
+        <p>
+          <a target="_blank" href="#" class="uk-icon-button uk-icon-weibo"></a>
+          <a target="_blank" href="#" class="uk-icon-button uk-icon-github"></a>
+          <a target="_blank" href="#" class="uk-icon-button uk-icon-instagram"></a>
+          <a target="_blank" href="#" class="uk-icon-button uk-icon-twitter"></a>
+        </p>
+        <p>Powerd by <a href="#">Awesome Python Webapp</a>. Copyright &copy; 2020.</p>
+        <p>All Rights Reserverd.</p>
+      </div>
+    </div>
+  </footer>
+{% block bodyend %}{% endblock %}
 </body>
 </html>
