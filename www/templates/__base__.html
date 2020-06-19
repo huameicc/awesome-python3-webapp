@@ -2,6 +2,19 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <!--<link rel="icon" sizes="any" href="/static/img/icon.svg">
+  <link rel="shortcut icon" href="/static/img/favicon.ico" type="image/x-icon">-->
+  <!-- RealFaviconGenerator -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/icon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/icon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/icon/favicon-16x16.png">
+  <link rel="manifest" href="/static/icon/site.webmanifest">
+  <link rel="mask-icon" href="/static/icon/safari-pinned-tab.svg" color="#e9967a">
+  <link rel="shortcut icon" href="/static/icon/favicon.ico">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-config" content="/static/icon/browserconfig.xml">
+  <meta name="theme-color" content="#ffffff">
+  <!-- -->
   {% block meta %}{% endblock %}
   <title>{% block title %} this is title {% endblock %}</title>
   <link rel="stylesheet" href="/static/css/uikit.min.css">
@@ -30,8 +43,8 @@
             </div>
           </li>
           {% else %}
-          <li><a href="/signin"><i class="uk-icon-sign-in"></i>登录</a></li>
-          <li><a href="/signup"><i class="uk-icon-user-plus"></i></a></li>
+          <li><a href="/signin"><i class="uk-icon-sign-in"></i> 登录</a></li>
+          <li><a href="/signup"><i class="uk-icon-user-plus"></i> 注册</a></li>
           {% endif %}
         </nav>
       </div>
