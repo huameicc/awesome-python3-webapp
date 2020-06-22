@@ -125,7 +125,14 @@ class RequestHandler:
         if self._has_request_arg:
             kw['request'] = request
         try:
-            return await self._func(**kw)
+            rs = await self._func(**kw)
+            _template = getattr(self._func, '__template__', None)
+            if _template:
+                if not isinstance(rs, dict):
+                    raise web.HTTPInternalServerError(reason='Return value of a template-decorated handler must be'
+                                                             ' a dict.')
+                rs['__template__'] = _template
+            return rs
         except ApiError as e:
             return dict(error=e.error, data=e.data, message=e.msg)
 

@@ -17,7 +17,7 @@ import time
 @template('test.html')
 async def test():
     users = await User.find_by()
-    return dict(users=users, __template__=index.__template__)
+    return dict(users=users)
 
 @get('/')
 @template('blogs.html')
@@ -29,4 +29,11 @@ async def index():
             Blog(id="tsb3", name="Blog Test 3", summary=summary, createtime=time.time()-3900),
             Blog(id="tsb4", name="Blog Test 4", summary=summary, createtime=time.time()-86400),
             Blog(id="tsb5", name="Blog Test 5", summary=summary, createtime=time.time()-86400*10)]
-    return dict(blogs=blogs, __template__=index.__template__)
+    return dict(blogs=blogs)
+
+@get('/api/users')
+async def api_get_users():
+    users = await User.find_by()
+    for u in users:
+        u.passwd = '******'
+    return dict(users=users)
