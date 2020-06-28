@@ -8,6 +8,7 @@ from aiohttp import web
 import orm
 from config import configs as cfgs
 from aioweb import scan_add_routes, add_static
+from handler import cookie2user, COOKIE_NAME
 
 
 logging.basicConfig(level='INFO')
@@ -16,6 +17,13 @@ logging.basicConfig(level='INFO')
 @web.middleware
 async def log_middleware(request, handler):
     logging.info('%s %s' % (request.method, request.path))
+    return await handler(request)
+
+
+@web.middleware
+async def auth_middleware(request, handler):
+    user = await cookie2user(request.cookies.get(COOKIE_NAME))
+    request.__user__ = user
     return await handler(request)
 
 
@@ -38,6 +46,7 @@ async def resp_middleware(request, handler):
         template = resp.get('__template__')
         if template is None:
             return web.json_response(resp, dumps=functools.partial(json.dumps, default=lambda x: x.__dict__))
+        resp.setdefault('user', request.__user__)
         return web.Response(body=request.app['__templates__'].get_template(template).render(resp).encode('utf-8'),
                             content_type='text/html', charset='utf-8')
     return web.Response(text=repr(resp), charset='utf-8', content_type='text/plain')
@@ -82,7 +91,7 @@ async def index(request: web.Request):
 async def init():
     await orm.create_pool(user=cfgs.db.user, password=cfgs.db.passwd, db=cfgs.db.database, host=cfgs.db.host,
                           port=cfgs.db.port)
-    app = web.Application(middlewares=[log_middleware, resp_middleware])
+    app = web.Application(middlewares=[log_middleware, auth_middleware, resp_middleware])
     # app.router.add_routes([web.get('/', index)])
     scan_add_routes(app, 'handler')
     add_static(app)

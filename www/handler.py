@@ -7,6 +7,7 @@
 @author: huameicc
 """
 
+import logging
 import time
 import re
 import hashlib
@@ -20,8 +21,9 @@ from api import ApiValueError, ApiError
 from config import configs as cfgs
 
 
-_SESSION_NAME = 'aweSession'
-_SESSION_KEY = cfgs.session.secret
+COOKIE_NAME = 'aweSession'
+_COOKIE_KEY = cfgs.session.secret
+_COOKIE_MAX_AGE = 86400
 
 _RE_EMAIL = re.compile(r'^[a-z0-9\-._]+@[a-z0-9\-_]+(?:\.[a-z0-9\-_]+){1, 4}$')
 _RE_SHA1 = re.compile(r'^[a-f0-9]{40}$')
@@ -54,10 +56,61 @@ async def api_get_users():
 
 def user2cookie(user, max_age):
     expires = str(time.time() + max_age)
-    pss = '%s:%s:%s:%s' % (user.id, user.passwd, expires, _SESSION_KEY)
+    pss = '%s:%s:%s:%s' % (user.id, user.passwd, expires, _COOKIE_KEY)
     shss = hashlib.sha1().update(pss.encode('utf-8')).hexdigest()
     return '-'.join([user.id, expires, shss])
 
+def user_response(user):
+    """ set_cookie, return user json"""
+    user_cookie = user2cookie(user, max_age=_COOKIE_MAX_AGE)
+    user.passwd = '******'
+    resp = web.json_response(data=user, dumps=functools.partial(json.dumps, default=lambda x: x.__dict__))
+    resp.set_cookie(COOKIE_NAME, user_cookie, max_age=_COOKIE_MAX_AGE, httponly=True)
+    logging.info('%s[%s] signed in.' % (user.name, user.email))
+    return resp
+
+async def cookie2user(val):
+    if not val or not isinstance(val, str):
+        return None
+    li = val.split('-')
+    if not len(li) == 3:
+        return None
+    uid, expires, shss = li
+    # 过期
+    try:
+        if int(expires) < time.time():
+            return None
+    except BaseException as e:
+        logging.exception(e)
+        return None
+    # 验证密码
+    user = await User.find(uid)
+    if not user:
+        return None
+    _s = '%s:%s:%s:%s' % (user.id, user.passwd, expires, _COOKIE_KEY)
+    sh1 = hashlib.sha1()
+    sh1.update(_s.encode('utf-8'))
+    if shss != sh1.hexdigest():
+        logging.info('invalid cookie.')
+        return None
+    user.passwd = '******'
+    return user
+
+@get('/signup')
+@template('register.html')
+def signup():
+    return {}
+
+@get('/signin')
+@template('signin.html')
+def signin():
+    return {}
+
+@get('/signout')
+async def signout():
+    resp = web.HTTPFound('/')
+    resp.set_cookie(COOKIE_NAME, '--', max_age=0, httponly=True)
+    return resp
 
 @post('/api/register')
 async def api_register(name, email, passwd):
@@ -78,7 +131,19 @@ async def api_register(name, email, passwd):
     rs = await user.insert()
     if rs != 1:
         raise ApiError('register:failed', '', 'save user failed.')
-    user.passwd = '******'
-    resp = web.json_response(data=user, dumps=functools.partial(json.dumps, default=lambda x: x.__dict__))
-    resp.set_cookie(_SESSION_NAME, user2cookie(user, max_age=86400), max_age=86400, httponly=True)
-    return resp
+    return user_response(user)
+
+@post('/api/authenticate')
+async def api_authenticate(email, passwd):
+    if not email:
+        raise ApiValueError('email', 'Invalid email.')
+    if not passwd:
+        raise ApiValueError('passwd', 'Invalid passwd.')
+    users = await User.find_by(email=email)
+    if len(users) < 1:
+        raise ApiValueError('email', 'This email is not registered.')
+    user = users[0]
+    sh_pass = hashlib.sha1().update(('%s:%s' % (user.id, passwd)).encode('utf-8')).hexdigest()
+    if sh_pass != user.passwd:
+        raise ApiValueError('Password is wrong.')
+    return user_response(user)

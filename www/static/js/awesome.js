@@ -24,7 +24,8 @@ $(document).ready(function () {
                         $('html, body').animate({scrollTop: alertTop});
                     }
                     if(field){
-                        $form.find('[name=' + field + ']').addClass('uk-form-danger');
+                        // $form.find('[name=' + field + ']').addClass('uk-form-danger');
+                        $form.find('#' + field).addClass('uk-form-danger');
                     }
                 }
                 else{
@@ -54,9 +55,47 @@ $(document).ready(function () {
         },
         
         postJson: function (url, data, callback) {
+            if (arguments.length===2){
+                callback=data;
+                data={};
+            }
             return this.each(function () {
+                $(this).showFormError();
+                $(this).showFormLoading(true);
+                _httpJson('POST', url, data, function (err, data) {
+                    if (err){
+                        if (! callback){
+                            $(this).showFormError(err);
+                        }
+                        $(this).showFormLoading(false);
+                    }
+                    callback && callback(err, data);
+                });
 
             });
         }
     });
 });
+
+//ajax
+function _httpJson(method, url, data, callback) {
+    let opt = {
+        url: url,
+        data: data,
+        dataType: json,
+        type: method.toUpperCase()
+    }
+    if(method.toUpperCase() === 'POST'){
+        opt.contentType = 'application/json';
+    }
+    $.ajax(url, opt)
+        .done(function (data) {
+            if (data && data.error){
+                return callback(data);
+            }
+            return callback(null, data);
+        })
+        .fail(function (jqXHR, statusText) {
+            return callback({error: 'ajax failed.', data: jqXHR.status.toString(),  msg: statusText})
+        });
+}

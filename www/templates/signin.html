@@ -1,6 +1,6 @@
 {% extends '__base__.html' %}
 
-{% block title %}User Register{% endblock %}
+{% block title %}User Sign In{% endblock %}
 
 {% block head %}
 {% endblock %}
@@ -8,15 +8,9 @@
 {% block content %}
 <div class="uk-grid" data-uk-grid-margin>
   <div class="uk-width-medium-2-3">
-    <h1 class="uk-h1">注册帐号</h1>
-    <form class="uk-form uk-form-stacked" id="register" @submit="submit">
+    <h1 class="uk-h1">登录帐号</h1>
+    <form class="uk-form uk-form-stacked" id="signin" @submit.prevent="submit">
       <div class="uk-alert uk-alert-danger uk-hidden"></div>
-      <div class="uk-form-row">
-        <label class="uk-form-label" for="username">用户名:</label>
-        <div class="uk-form-controls">
-          <input type="text" id="username" maxlength="50" placeholder="用户名" v-model.trim="name">
-        </div>
-      </div>
       <div class="uk-form-row">
         <label class="uk-form-label" for="email">邮箱:</label>
         <div class="uk-form-controls">
@@ -30,18 +24,12 @@
         </div>
       </div>
       <div class="uk-form-row">
-        <label class="uk-form-label" for="passwd2">确认密码:</label>
-        <div class="uk-form-controls">
-          <input type="password" id="passwd2" maxlength="50" placeholder="再次输入密码" v-model="passwd2">
-        </div>
-      </div>
-      <div class="uk-form-row">
-        <button class="uk-button uk-button-primary" type="submit"><i class="uk-icon-user"></i>注册</button>
+        <button class="uk-button uk-button-primary" type="submit"><i class="uk-icon-sign-in"></i>登录</button>
       </div>
     </form>
   </div>
 </div>
-{% endblock %}
+{% endblock%}
 
 
 {% block bodyend %}
@@ -53,31 +41,21 @@
 
     $(document).ready(function () {
         let vm = new Vue({
-            el: '#register',
+            el: '#signin',
             data: {
-                name: '',
                 email: '',
                 passwd: '',
-                passwd2: '',
             },
             methods: {
                 submit: function (evt) {
-                    evt.preventDefault();
-                    let $form = $('#register');
-                    if (!this.name) {
-                        return $form.showFormError({msg: '用户名不能为空!', data: 'username'});
-                    }
+                    let $form = $('#signin');
                     if (!validateEmail(this.email)) {
                         return $form.showFormError({msg: '邮箱地址不合法！', data: 'email'});
                     }
                     if (this.passwd.length < 6) {
-                        return $form.showFormError({msg: '密码长度需大于6!', data: 'passwd'});
+                        return $form.showFormError({msg: '密码错误!', data: 'passwd'});
                     }
-                    if (this.passwd !== this.passwd2) {
-                        return $form.showFormError({msg: '两次输入密码不一致', data: 'passwd2'});
-                    }
-                    $form.postJson('/api/register', {
-                        name: this.name,
+                    $form.postJson('/api/authenticate', {
                         email: this.email,
                         passwd: CryptoJS.SHA1(this.email + ':' + this.passwd).toString()
                     }, function (err) {
