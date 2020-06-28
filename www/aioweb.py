@@ -105,7 +105,7 @@ class RequestHandler:
                     kw = dict(**data)
                 else:
                     raise web.HTTPBadRequest(reason='Context-Type not supported: %s' % request.content_type)
-        # key冲突时，match_info 优先使用。
+        # key冲突时，。
         for k, v in request.match_info.items():
             if k in kw:
                 continue
