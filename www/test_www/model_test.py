@@ -27,7 +27,7 @@ async def test():
         logging.debug(', '.join(map(str, users)))
         if users:
             user = users[0]
-            user.passwd = '654321' if user.passwd == '123456' else '123456'
+            user.passwd = '654321' if user.passwd == '123456' else '123456' if user.passwd == '654321' else user.passwd
             logging.debug(await user.update())
     except BaseException as e:
         logging.error(e)
