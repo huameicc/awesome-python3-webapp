@@ -25,7 +25,7 @@ COOKIE_NAME = 'aweSession'
 _COOKIE_KEY = cfgs.session.secret
 _COOKIE_MAX_AGE = 86400
 
-_RE_EMAIL = re.compile(r'^[a-z0-9\-._]+@[a-z0-9\-_]+(?:\.[a-z0-9\-_]+){1, 4}$')
+_RE_EMAIL = re.compile(r'^[a-z0-9\-._]+@[a-z0-9\-_]+(?:\.[a-z0-9\-_]+){1,4}$')
 _RE_SHA1 = re.compile(r'^[a-f0-9]{40}$')
 
 @get('/test')
@@ -55,9 +55,9 @@ async def api_get_users():
 
 
 def user2cookie(user, max_age):
-    expires = str(time.time() + max_age)
+    expires = str(int(time.time()) + max_age)
     pss = '%s:%s:%s:%s' % (user.id, user.passwd, expires, _COOKIE_KEY)
-    shss = hashlib.sha1().update(pss.encode('utf-8')).hexdigest()
+    shss = hashlib.sha1(pss.encode('utf-8')).hexdigest()
     return '-'.join([user.id, expires, shss])
 
 def user_response(user):
@@ -125,8 +125,8 @@ async def api_register(name, email, passwd):
         raise ApiError('register:failed', 'email', 'email already used.')
     uid = generate_id()
     # salt: uid
-    sh_pass = hashlib.sha1().update(('%s:%s' % (uid, passwd)).encode('utf-8')).hexdigest()
-    img = 'http://www.gravatar.com/avatar/%s?d=mm&s=120' % (hashlib.md5().update(email.encode('utf-8')).hexdigest())
+    sh_pass = hashlib.sha1(('%s:%s' % (uid, passwd)).encode('utf-8')).hexdigest()
+    img = 'http://www.gravatar.com/avatar/%s?d=mm&s=120' % (hashlib.md5(email.encode('utf-8')).hexdigest())
     user = User(id=uid, name=name.strip(), email=email, passwd=sh_pass, image=img)
     rs = await user.insert()
     if rs != 1:
@@ -143,7 +143,7 @@ async def api_authenticate(email, passwd):
     if len(users) < 1:
         raise ApiValueError('email', 'This email is not registered.')
     user = users[0]
-    sh_pass = hashlib.sha1().update(('%s:%s' % (user.id, passwd)).encode('utf-8')).hexdigest()
+    sh_pass = hashlib.sha1(('%s:%s' % (user.id, passwd)).encode('utf-8')).hexdigest()
     if sh_pass != user.passwd:
-        raise ApiValueError('Password is wrong.')
+        raise ApiValueError('passwd', 'Password is wrong.')
     return user_response(user)

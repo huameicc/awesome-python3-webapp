@@ -96,6 +96,7 @@ class RequestHandler:
                     raise web.HTTPBadRequest(reason='Can\'t find Content-Type.')
                 ct = request.content_type.lower()
                 if ct.startswith('application/json'):
+                    data = await request.read()
                     data = await request.json()
                     if not isinstance(data, dict):
                         raise web.HTTPBadRequest(reason='json data must be a dict.')
@@ -134,7 +135,7 @@ class RequestHandler:
                 rs['__template__'] = _template
             return rs
         except ApiError as e:
-            return dict(error=e.error, data=e.data, message=e.msg)
+            return dict(error=e.error, data=e.data, msg=e.msg)
 
 
 def add_route(app, func):

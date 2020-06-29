@@ -6,40 +6,42 @@
 {% endblock %}
 
 {% block content %}
-<div class="uk-grid" data-uk-grid-margin>
-  <div class="uk-width-medium-2-3">
-    <h1 class="uk-h1">登录帐号</h1>
-    <form class="uk-form uk-form-stacked" id="signin" @submit.prevent="submit">
-      <div class="uk-alert uk-alert-danger uk-hidden"></div>
-      <div class="uk-form-row">
-        <label class="uk-form-label" for="email">邮箱:</label>
-        <div class="uk-form-controls">
-          <input type="text" id="email" maxlength="50" placeholder="邮箱" v-model.trim="email">
-        </div>
+
+<div class="uk-panel uk-panel-box uk-panel-space uk-text-center uk-container-center uk-width-large-1-2 uk-width-medium-2-3 uk-width-1-1">
+  <h2 class="uk-h2">用户登录</h2>
+  <form class="uk-form uk-form-stacked" id="signin" @submit.prevent="submit">
+    <div class="uk-alert uk-alert-danger uk-hidden"></div>
+    <div class="uk-form-row">
+      <div class="uk-form-icon uk-width-medium-1-2 uk-width-1-1">
+        <i class="uk-icon-envelope-o"></i>
+        <input type="text" id="email" maxlength="50" placeholder="邮箱帐号" class="uk-width-1-1" v-model.trim="email">
       </div>
-      <div class="uk-form-row">
-        <label class="uk-form-label" for="passwd">设置密码:</label>
-        <div class="uk-form-controls">
-          <input type="password" id="passwd" maxlength="50" placeholder="输入密码" v-model="passwd">
-        </div>
+    </div>
+    <div class="uk-form-row">
+      <div class="uk-form-icon uk-width-medium-1-2 uk-width-1-1">
+        <i class="uk-icon-lock"></i>
+        <input type="password" id="passwd" maxlength="50" placeholder="输入密码" class="uk-width-1-1" v-model="passwd">
       </div>
-      <div class="uk-form-row">
-        <button class="uk-button uk-button-primary" type="submit"><i class="uk-icon-sign-in"></i>登录</button>
-      </div>
-    </form>
-  </div>
+    </div>
+    <div class="uk-form-row">
+      <button class="uk-button uk-button-primary uk-width-medium-1-2 uk-width-1-1" type="submit"><i class="uk-icon-sign-in"></i> 登录</button>
+    </div>
+  </form>
 </div>
+
 {% endblock%}
 
 
 {% block bodyend %}
 <script>
     function validateEmail(email) {
-        let reg = /^[a-z0-9\-._]+@[a-z0-9\-_](?:.[a-z0-9\-_]+){1,4}$/i;
+        let reg = /^[a-z0-9\-._]+@[a-z0-9\-_]+(?:\.[a-z0-9\-_]+){1,4}$/i;
         return reg.test(email);
     }
 
     $(document).ready(function () {
+        // $('#root').addClass('uk-flex uk-flex-column uk-flex-space-between');
+
         let vm = new Vue({
             el: '#signin',
             data: {
@@ -60,6 +62,7 @@
                         passwd: CryptoJS.SHA1(this.email + ':' + this.passwd).toString()
                     }, function (err) {
                         if (err) {
+                            console.log(err);
                             return $form.showFormError(err);
                         }
                         return location.assign('/');

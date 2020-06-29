@@ -36,7 +36,7 @@
         </div>
       </div>
       <div class="uk-form-row">
-        <button class="uk-button uk-button-primary" type="submit"><i class="uk-icon-user"></i>注册</button>
+        <button class="uk-button uk-button-primary" type="submit"><i class="uk-icon-user"></i> 注册</button>
       </div>
     </form>
   </div>
@@ -47,7 +47,7 @@
 {% block bodyend %}
 <script>
     function validateEmail(email) {
-        let reg = /^[a-z0-9\-._]+@[a-z0-9\-_](?:.[a-z0-9\-_]+){1,4}$/i;
+        let reg = /^[a-z0-9\-._]+@[a-z0-9\-_]+(?:\.[a-z0-9\-_]+){1,4}$/i;
         return reg.test(email);
     }
 

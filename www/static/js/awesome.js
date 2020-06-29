@@ -10,7 +10,7 @@ $(document).ready(function () {
                     return console.error('Invalid call of showFormError on non-form element.');
                 }
                 // reset form danger
-                $form.find('uk-form-danger').removeClass('uk-form-danger');
+                $form.find('.uk-form-danger').removeClass('uk-form-danger');
                 // alert info
                 let $alert = $form.find('.uk-alert'),
                     field = err && err.data;
@@ -60,14 +60,15 @@ $(document).ready(function () {
                 data={};
             }
             return this.each(function () {
-                $(this).showFormError();
-                $(this).showFormLoading(true);
+                let $form = $(this);
+                $form.showFormError();
+                $form.showFormLoading(true);
                 _httpJson('POST', url, data, function (err, data) {
                     if (err){
                         if (! callback){
-                            $(this).showFormError(err);
+                            $form.showFormError(err);
                         }
-                        $(this).showFormLoading(false);
+                        $form.showFormLoading(false);
                     }
                     callback && callback(err, data);
                 });
@@ -82,11 +83,12 @@ function _httpJson(method, url, data, callback) {
     let opt = {
         url: url,
         data: data,
-        dataType: json,
+        dataType: 'json',
         type: method.toUpperCase()
     }
     if(method.toUpperCase() === 'POST'){
         opt.contentType = 'application/json';
+        opt.data = JSON.stringify(data);
     }
     $.ajax(url, opt)
         .done(function (data) {
@@ -95,7 +97,7 @@ function _httpJson(method, url, data, callback) {
             }
             return callback(null, data);
         })
-        .fail(function (jqXHR, statusText) {
-            return callback({error: 'ajax failed.', data: jqXHR.status.toString(),  msg: statusText})
+        .fail(function (jqXHR) {
+            return callback({error: 'ajax failed.', data: jqXHR.status.toString(),  msg: jqXHR.statusText})
         });
 }
