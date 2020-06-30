@@ -130,7 +130,7 @@ async def api_register(name, email, passwd):
     user = User(id=uid, name=name.strip(), email=email, passwd=sh_pass, image=img)
     rs = await user.insert()
     if rs != 1:
-        raise ApiError('register:failed', '', 'save user failed.')
+        raise ApiError('register:failed', '', 'insert user failed.')
     return user_response(user)
 
 @post('/api/authenticate')
@@ -147,3 +147,19 @@ async def api_authenticate(email, passwd):
     if sh_pass != user.passwd:
         raise ApiValueError('passwd', 'Password is wrong.')
     return user_response(user)
+
+@post('/api/blogs/create')
+async def api_create_blog(request, name, summary, content):
+    if not name:
+        raise ApiValueError('name', 'Blog need a title.')
+    if not summary:
+        raise ApiValueError('summary', 'Summary cannot be empty.')
+    if not content:
+        raise ApiValueError('content', 'Content cannot be empty.')
+    _user = request.__user__
+    blog = Blog(user_id = _user.id, user_name= _user.name, user_image=_user.image, name=name, summary=summary,
+                content=content)
+    rs = await blog.insert()
+    if rs != 1:
+        raise ApiError('create-blog:failed', msg='insert blog failed.')
+    return dict(blog=blog)
