@@ -158,6 +158,21 @@ async def api_authenticate(email, passwd):
     return _user_response(user)
 
 
+def parse_pageindex(pageindex):
+    pindex = 1
+    try:
+        pindex = int(pageindex)
+    except (TypeError, ValueError):
+        pass
+    return max(1, pindex)
+
+
+@get('/manage/blogs')
+@template('manage_blogs.html')
+def manage_blogs(pageindex="1"):
+    return dict(pageindex=parse_pageindex(pageindex))
+
+
 @get('/manage/blog/create')
 @template('edit_blog.html')
 def create_blog():
@@ -166,12 +181,7 @@ def create_blog():
 
 @get('/api/blogs')
 async def api_get_blogs(pageindex='1'):
-    pindex = 1
-    try:
-        pindex = int(pageindex)
-    except (TypeError, ValueError):
-        pass
-    pindex = max(1, pindex)
+    pindex = parse_pageindex(pageindex)
     count = await Blog.find_count()
     page = Page(count, pindex)
     blogs = await Blog.find_by(orders=[('createtime', 0),], limit=(page.offset, page.limit))
