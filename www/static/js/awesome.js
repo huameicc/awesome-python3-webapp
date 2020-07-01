@@ -82,10 +82,10 @@ $(document).ready(function () {
 function _httpJson(method, url, data, callback) {
     let opt = {
         url: url,
-        data: data,
+        data: data,     // encodeURIComponent not needed. ajax will transfer GET-data to str and append it to url automatically.
         dataType: 'json',
         type: method.toUpperCase()
-    }
+    };
     if(method.toUpperCase() === 'POST'){
         opt.contentType = 'application/json';
         opt.data = JSON.stringify(data);
@@ -100,4 +100,41 @@ function _httpJson(method, url, data, callback) {
         .fail(function (jqXHR) {
             return callback({error: 'ajax failed.', data: jqXHR.status.toString(),  msg: jqXHR.statusText})
         });
+}
+
+function getJson(url, data, callback) {
+    if (arguments.length === 2) {
+        callback = data;
+        data = {};
+    }
+    return _httpJson('GET', url, data, callback)
+}
+
+function postJson(url, data, callback) {
+    if (arguments.length === 2) {
+        callback = data;
+        data = {};
+    }
+    return _httpJson('POST', url, data, callback)
+}
+
+
+function _displayError($obj, err) {
+    $obj.filter(':visible').hide();
+    let msg = err && err.msg || String(err),
+        code = err && err.error || '500',
+        htmls = [];
+    htmls.push('<div class="uk-alert uk-alert-danger"' + '>');
+    htmls.push('<p>Error: ' + msg + '</p>');
+    htmls.push('<p>Code: ' + code + '</p>');
+    htmls.push('</div>');
+    $obj.html(htmls.join('\n')).slideDown();
+}
+
+function showError(err) {
+    return _displayError($('#error'), err)
+}
+
+function showFatal(err) {
+    return _displayError($('#loading'), err)
 }

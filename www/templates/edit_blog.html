@@ -15,14 +15,15 @@
     </ul>
   </div>
 
-  <div id="error" class="uk-width-1-1"></div>
+  <div id="error" class="uk-width-1-1">
+  </div>
 
   <div id="loading" class="uk-width-1-1">
     <p><i class="uk-icon-spinner uk-icon-medium uk-icon-spin"></i>加载中...</p>
   </div>
 
   <div class="uk-width-medium-2-3">
-    <form id="create-blog" class="uk-form uk-form-stacked" @submit="submit">
+    <form id="create-blog" class="uk-form uk-form-stacked" @submit.prevent="submit">
       <div class="uk-alert uk-alert-danger uk-hidden"></div>
       <div class="uk-form-row">
         <label class="uk-form-label" for="name">标题:</label>
@@ -33,13 +34,15 @@
       <div class="uk-form-row">
         <label class="uk-form-label" for="summary">摘要:</label>
         <div class="uk-form-controls">
-          <textarea id="summary" rows="4" placeholder="摘要" class="uk-width-1-1" v-model.trim="summary" style="resize: none"></textarea>
+          <textarea id="summary" rows="4" placeholder="摘要" class="uk-width-1-1" v-model.trim="summary"
+                    style="resize: none"></textarea>
         </div>
       </div>
       <div class="uk-form-row">
         <label class="uk-form-label" for="content">内容:</label>
         <div class="uk-form-controls">
-          <textarea id="content" rows="12" placeholder="内容" class="uk-width-1-1" v-model.trim="content" style="resize: none"></textarea>
+          <textarea id="content" rows="12" placeholder="内容" class="uk-width-1-1" v-model.trim="content"
+                    style="resize: none"></textarea>
         </div>
       </div>
       <div class="uk-form-row">
@@ -54,7 +57,62 @@
 
 {% block bodyend %}
 <script>
+    let blogid = '{{ blogid }}',
+        action = '{{ action }}';
+
+    function initVM(data) {
+        $('#loading').hide();
+        new Vue({
+            el: '#create-blog',
+            data: data,
+            methods: {
+                submit: function (evt) {
+                    let $form = $('#create-blog');
+                    if (!this.name) {
+                        return $form.showFormError('标题不能为空');
+                    }
+                    if (!this.summary) {
+                        return $form.showFormError('摘要不能为空');
+                    }
+                    if (!this.content) {
+                        return $form.showFormError('内容不能为空');
+                    }
+                    $form.postJson(action, this.$data, function (err, data) {
+                        if (err) {
+                            return $form.showFormError(err);
+                        }
+                        return location.assign('/api/blogs/' + data.blog.id);
+                    });
+                }
+            }
+        });
+    }
+
     $(document).ready(function () {
+        if (blogid) {
+            getJson('/api/blogs/' + blogid, function (err, data) {
+                if (err) {
+                    return showFatal(err);
+                }
+                try {
+                    let blogdata = {
+                        name: data.blog.name,
+                        summary: data.blog.summary,
+                        content: data.blog.content
+                    };
+                    initVM(blogdata);
+                } catch (err) {
+                    return showFatal({error: err.name, msg: err.message})
+                }
+            });
+        }
+        else {
+            initVM({
+                name: '',
+                summary: '',
+                content: ''
+            });
+        }
     });
 </script>
 {% endblock %}

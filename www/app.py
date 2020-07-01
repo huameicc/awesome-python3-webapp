@@ -1,3 +1,12 @@
+#!usr/bin/python3
+# -*- coding: utf-8 -*-
+
+"""
+@file: app.py
+@time: 2020/7/1
+@author: huameicc
+"""
+
 import asyncio, os, json, time
 import datetime
 import logging
@@ -21,9 +30,18 @@ async def log_middleware(request, handler):
 
 
 @web.middleware
-async def auth_middleware(request, handler):
+async def auth_middleware(request: web.Request, handler):
+    """
+    1. check user_cookie and bind user to request.__user__
+    2. check permission for administrative operations.
+    :param request:
+    :param handler:
+    :return:
+    """
     user = await cookie2user(request.cookies.get(COOKIE_NAME))
     request.__user__ = user
+    if request.path.startswith('/manage/') and not (user and user.admin):
+        raise web.HTTPFound('/signin')
     return await handler(request)
 
 

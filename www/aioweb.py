@@ -96,7 +96,7 @@ class RequestHandler:
                     raise web.HTTPBadRequest(reason='Can\'t find Content-Type.')
                 ct = request.content_type.lower()
                 if ct.startswith('application/json'):
-                    data = await request.read()
+                    # data = await request.read()
                     data = await request.json()
                     if not isinstance(data, dict):
                         raise web.HTTPBadRequest(reason='json data must be a dict.')
@@ -119,12 +119,13 @@ class RequestHandler:
                 if k in kw:
                     kwargs[k] = kw[k]
             kw = kwargs
+        # request
+        if self._has_request_arg:
+            kw['request'] = request
         # 检查无default参数
         for k in self._required_kwargs:
             if k not in kw:
-                raise web.HTTPBadRequest(reason='parameter %s lost.' % k)
-        if self._has_request_arg:
-            kw['request'] = request
+                raise web.HTTPBadRequest(reason='HTTPBadRequest: parameter %s lost.' % k)
         try:
             rs = await self._func(**kw)
             _template = getattr(self._func, '__template__', None)
@@ -148,7 +149,7 @@ def add_route(app, func):
         raise ValueError('@get or @post needed for %s' % func)
     if not asyncio.iscoroutinefunction(func):
         func = asyncio.coroutine(func)
-    logging.info('add route %s %s to %s%s' % (method, path, func.__name__, inspect.signature(func)))
+    logging.info('add route %s %s  -------->  %s%s' % (method, path, func.__name__, inspect.signature(func)))
     app.router.add_route(method, path, RequestHandler(func))
 
 
@@ -171,8 +172,8 @@ def scan_add_routes(app, modpath):
         __method__ = getattr(fun, '__method__', None)
         __route__ = getattr(fun, '__route__', None)
         if __method__ is None or __route__ is None:
-            if inspect.isfunction(fun):
-                logging.warning('function in %s not decorated by @post or @get :%s' % (modpath, fun))
+            # if inspect.isfunction(fun):
+            #     logging.warning('function in %s not decorated by @post or @get :%s' % (modpath, fun))
             continue
         add_route(app, fun)
 
@@ -180,7 +181,7 @@ def scan_add_routes(app, modpath):
 def add_static(app:web.Application):
     static_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
     app.router.add_static(r'/static/', static_path)
-    logging.info('add /static/ to %s' % static_path)
+    logging.info('add /static/  ========> %s' % static_path)
 
 
 if __name__ == '__main__':
