@@ -266,6 +266,24 @@ class Model(metaclass=ModelMetaclass):
         return ' order by %s' % ', '.join(map(lambda t: '`%s` %s' % (cls.fieldname(t[0]), 'asc' if t[1] else 'desc')
                                               , orders)) if orders else ''
 
+    @staticmethod
+    def _sql_limit(limit):
+        """limit 10, 2"""
+        if not limit:
+            return '', ()
+        _sql = ' limit ?'
+        _args = []
+        if isinstance(limit, int):
+            _args.append(limit)
+        elif isinstance(limit, (tuple, list)) and len(limit) <= 2:
+            _args.append(limit[0])
+            if len(limit) == 2:
+                _sql += ', ?'
+                _args.append(limit[1])
+        else:
+            raise ValueError('invalid limit: %s' % limit)
+        return _sql, tuple(_args)
+
     @classmethod
     async def find(cls, primary):
         """根据主键寻找"""
@@ -274,16 +292,18 @@ class Model(metaclass=ModelMetaclass):
         return rs and cls.__initfromdb__(**rs[0]) or None
 
     @classmethod
-    async def find_by(cls, orders=None, **kwargs):
+    async def find_by(cls, orders=None, limit=None, **kwargs):
         """
         where 查询
         :param orders:  tuple list, (field, 1/0), 1: asc, 0 desc
+        :param limit: 分页 limit <limit>, <offset>; 可以接受单值<limit>或者长度为2的list/tuple
         :param kwargs: where condition
         :return:
         """
         where_sql, where_args = cls._sql_condition(**kwargs)
         order_sql = cls._sql_order(orders)
-        rs = await select(cls.__select__ + where_sql + order_sql + ';', args=where_args)
+        limit_sql, limit_args = cls._sql_limit(limit)
+        rs = await select(cls.__select__ + where_sql + order_sql + limit_sql + ';', args=where_args + limit_args)
         return [cls.__initfromdb__(**_r) for _r in rs]
 
     @classmethod
