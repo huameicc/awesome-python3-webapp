@@ -34,9 +34,9 @@
       <tr v-for="blog in blogs">
         <td><a target="_blank" :href="'/blog/' + blog.id">{{ '{{ blog.name }}' }}</a></td>
         <td><a target="_blank" :href="'/user/' + blog.user_id">{{ '{{ blog.user_name }}' }}</a></td>
-        <td>{{ '{{ blog.createtime.toDate().formatStr() }}' }}</td>
+        <td><span>{{ '{{ blog.createtime.toDate().formatStr() }}' }}</span></td>
         <td>
-          <a @click="editBlog(blog)" class="uk-icon-edit"></a>
+          <a @click="editBlog(blog)" class="uk-icon-edit uk-margin-small-right"></a>
           <a @click="deleBlog(blog)" class="uk-icon-trash-o"></a>
         </td>
       </tr>

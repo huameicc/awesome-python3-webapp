@@ -1,16 +1,17 @@
 // user js
 
-
+// extend Number, transfer to Date as seconds.
 if (! Number.prototype.toDate) {
     Number.prototype.toDate = function () {
         return new Date(this * 1000); // js is ms. python is s.
     }
 }
 
-
+// extend Date, format to str.
+// yyyy/yy  mm/m  dd/d  HH/H  MM/M  SS/S  II/I  p/P  a/A/ac  b/B
 if (! Date.prototype.formatStr) {
     Date.prototype.formatStr = function (fmtStr) {
-        fmtStr = fmtStr || 'yyyy-mm-dd HH:MM:SS';
+        fmtStr = fmtStr || 'yyyy-mm-dd HH:MM';
         let code = /[a-zA-Z]+/g,
             dt = this;
         return fmtStr.replace(code, function (match) {
@@ -72,6 +73,8 @@ if (! Date.prototype.formatStr) {
     };
 }
 
+
+// refresh marked with a timestamp appended to url
 function refresh() {
     let url = location.pathname,
         t = new Date().getTime();
@@ -203,6 +206,8 @@ function postJson(url, data, callback) {
 }
 
 
+
+// display error info in manage pages.
 function _displayError($obj, err) {
     $obj.filter(':visible').hide();
     let msg = err && err.msg || String(err),
