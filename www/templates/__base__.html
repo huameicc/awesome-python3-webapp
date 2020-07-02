@@ -27,39 +27,41 @@
 </head>
 <body class="uk-height-1-1">
 <div id="root" class="uk-flex uk-flex-column uk-flex-space-between uk-height-1-1">
-  <nav class="uk-navbar uk-navbar-attached uk-margin-bottom">
-    <div class="uk-container uk-container-center">
-      <a href="/" class="uk-navbar-brand">Async-Blog</a>
-      <ul class="uk-navbar-nav">
-        <li data-url="blogs"><a href="/"><i class="uk-icon-home"></i> Blog</a></li>
-        <li><a target="_blank" href="#"><i class="uk-icon-book"></i> Tutorial</a></li>
-        <li><a target="_blank" href="#"><i class="uk-icon-code"></i> Code</a></li>
-      </ul>
-      <div class="uk-navbar-flip">
-        <nav class="uk-navbar-nav">
-          {% if user %}
-          <li class="uk-parent" data-uk-dropdown>
-            <a href><i class="uk-icon-user"></i> {{ user.name }}</a>
-            <div class="uk-dropdown uk-dropdown-navbar uk-dropdown-bottom">
-              <ul class="uk-nav uk-nav-navbar">
-                <li><a href="/signout"><i class="uk-icon-sign-out"></i> 退出</a></li>
-              </ul>
-            </div>
-          </li>
-          {% else %}
-          <li><a href="/signin"><i class="uk-icon-sign-in"></i> 登录</a></li>
-          <li><a href="/signup"><i class="uk-icon-user-plus"></i> 注册</a></li>
-          {% endif %}
-        </nav>
+  <div id="root-top">
+    <nav class="uk-navbar uk-navbar-attached uk-margin-bottom">
+      <div class="uk-container uk-container-center">
+        <a href="/" class="uk-navbar-brand">Async-Blog</a>
+        <ul class="uk-navbar-nav">
+          <li data-url="blogs"><a href="/"><i class="uk-icon-home"></i> Blog</a></li>
+          <li><a target="_blank" href="#"><i class="uk-icon-book"></i> Tutorial</a></li>
+          <li><a target="_blank" href="#"><i class="uk-icon-code"></i> Code</a></li>
+        </ul>
+        <div class="uk-navbar-flip">
+          <nav class="uk-navbar-nav">
+            {% if user %}
+            <li class="uk-parent" data-uk-dropdown>
+              <a href><i class="uk-icon-user"></i> {{ user.name }}</a>
+              <div class="uk-dropdown uk-dropdown-navbar uk-dropdown-bottom">
+                <ul class="uk-nav uk-nav-navbar">
+                  <li><a href="/signout"><i class="uk-icon-sign-out"></i> 退出</a></li>
+                </ul>
+              </div>
+            </li>
+            {% else %}
+            <li><a href="/signin"><i class="uk-icon-sign-in"></i> 登录</a></li>
+            <li><a href="/signup"><i class="uk-icon-user-plus"></i> 注册</a></li>
+            {% endif %}
+          </nav>
+        </div>
       </div>
-    </div>
-  </nav>
+    </nav>
 
-  <main>
-    <div class="uk-container uk-container-center">
-      {% block content %}{% endblock %}
-    </div>
-  </main>
+    <main>
+      <div class="uk-container uk-container-center">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
 
   <footer>
     <div class="uk-margin-large-top" style="background-color: #eee; border-top: 1px solid #ccc;">

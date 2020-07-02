@@ -1,5 +1,89 @@
 // user js
 
+
+if (! Number.prototype.toDate) {
+    Number.prototype.toDate = function () {
+        return new Date(this * 1000); // js is ms. python is s.
+    }
+}
+
+
+if (! Date.prototype.formatStr) {
+    Date.prototype.formatStr = function (fmtStr) {
+        fmtStr = fmtStr || 'yyyy-mm-dd HH:MM:SS';
+        let code = /[a-zA-Z]+/g,
+            dt = this;
+        return fmtStr.replace(code, function (match) {
+            let _weeks = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                _fullweeks = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+                _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                _fullmonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+                _week_cn = ['日', '一', '二', '三', '四', '五', '六'];
+            function _double(num) {
+                return num < 10 ? '0' + num : num.toString()
+            }
+            switch (match) {
+                case 'yyyy':
+                    return dt.getFullYear().toString();
+                case 'yy':
+                    return dt.getFullYear().toString().slice(-2);
+                case 'mm':
+                    return _double(dt.getMonth() + 1);
+                case 'm':
+                    return (dt.getMonth() + 1).toString();
+                case 'dd':
+                    return _double(dt.getDate());
+                case 'd':
+                    return dt.getDate().toString();
+                case 'HH':
+                    return _double(dt.getHours());
+                case 'H':
+                    return dt.getHours().toString();
+                case 'MM':
+                    return _double(dt.getMinutes());
+                case 'M':
+                    return dt.getMinutes().toString();
+                case 'SS':
+                    return _double(dt.getSeconds());
+                case 'S':
+                    return dt.getSeconds().toString();
+                case 'II':
+                    return _double(dt.getHours() % 12);
+                case 'I':
+                    return (dt.getHours() % 12).toString();
+                case 'p':
+                    return dt.getHours() >= 12 ? 'pm' : 'am';
+                case 'P':
+                    return dt.getHours() >= 12 ? 'Pm' : 'Am';
+                case 'a':
+                    return _weeks[dt.getDay()];
+                case 'A':
+                    return _fullweeks[dt.getDay()];
+                case 'ac':
+                    return _week_cn[dt.getDay()];
+                case 'b':
+                    return _months[dt.getMonth()];
+                case 'B':
+                    return _fullmonths[dt.getMonth()];
+                default:
+                    return match;
+            }
+        });
+    };
+}
+
+function refresh() {
+    let url = location.pathname,
+        t = new Date().getTime();
+    if (location.search){
+        url += location.search + '&t=' + t;
+    }
+    else {
+        url += '?t=' + t;
+    }
+    return location.assign(url);
+}
+
 // extend jquery
 $(document).ready(function () {
     $.fn.extend({
