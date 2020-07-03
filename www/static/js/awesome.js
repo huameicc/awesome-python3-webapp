@@ -74,6 +74,32 @@ if (! Date.prototype.formatStr) {
 }
 
 
+// parse query
+function parseSearch() {
+    let args = {};
+    if (! location.search)
+        return args
+    let ss = location.search.slice(1).split('&');
+    let kv;
+    for(let i=0; i<ss.length; i++){
+        kv = ss[i].split('=');
+        if (! kv.length === 2)
+            continue
+        // encodeURIComponent将空格被编码为%20，解码后是空格。
+        // 而jquery.param会把空格编码为+, 解码时得到的是+， 再次编码+号被编码为%2B
+        args[kv[0]] = decodeURIComponent(kv[1]).replace(/\+/g, ' ');
+    }
+    return args;
+}
+
+
+function goPage(idx) {
+    let args = parseSearch();
+    args.pageindex = idx;
+    return location.assign(location.pathname + '?' + $.param(args));
+}
+
+
 // refresh marked with a timestamp appended to url
 function refresh() {
     let url = location.pathname,
@@ -185,7 +211,7 @@ function _httpJson(method, url, data, callback) {
             return callback(null, data);
         })
         .fail(function (jqXHR) {
-            return callback({error: 'ajax failed.', data: jqXHR.status.toString(),  msg: jqXHR.statusText})
+            return callback({error: 'ajax failed.', data: jqXHR.status.toString(),  msg: jqXHR.statusText});
         });
 }
 
@@ -194,7 +220,7 @@ function getJson(url, data, callback) {
         callback = data;
         data = {};
     }
-    return _httpJson('GET', url, data, callback)
+    return _httpJson('GET', url, data, callback);
 }
 
 function postJson(url, data, callback) {
@@ -202,9 +228,63 @@ function postJson(url, data, callback) {
         callback = data;
         data = {};
     }
-    return _httpJson('POST', url, data, callback)
+    return _httpJson('POST', url, data, callback);
 }
 
+
+// vue component
+if (typeof Vue !== 'undefined'){
+    Vue.component('pagination', {
+        props: ['page'],
+        data: function () {
+            return {
+                radius: 2
+            }
+        },
+        template: '<ul v-if="page.pageindex" class="uk-pagination" :page="page">\n' +
+        '  <li v-if="page.hasprev"><a href="#" @click="goto(page.pageindex-1)"><i class="uk-icon-angle-double-left"></i></a></li>\n' +
+        '  <li v-else class="uk-disabled"><span><i class="uk-icon-angle-double-left"></i></span></li>\n' +
+        '  <li v-if="page.hasprev"><a @click="goto(1)">1</a></li>\n' +
+        '  <li v-if="page.pageindex > 4"><span>...</span></li>\n' +
+        '  <li v-for="p in before(page)"><a @click="goto(p)">{{ p }}</a></li>\n' +
+        '  <li class="uk-active"><span>{{ page.pageindex }}</span></li>\n' +
+        '  <li v-for="p in after(page)"><a @click="goto(p)">{{ p }}</a></li>\n' +
+        '  <li v-if="page.pageindex < page.pagecount - 3"><span>...</span></li>\n' +
+        '  <li v-if="page.hasnext"><a @click="goto(page.pagecount)">{{ page.pagecount }}</a></li>\n' +
+        '  <li v-if="page.hasnext"><a href="#" @click="goto(page.pageindex+1)"><i class="uk-icon-angle-double-right"></i></a></li>\n' +
+        '  <li v-else class="uk-disabled"><span><i class="uk-icon-angle-double-right"></i></span></li>\n' +
+        '</ul>',
+        methods: {
+            goto: function (pageidx) {
+                return goPage(pageidx);
+            },
+            before: function (page) {
+                console.log('before, ' + page)
+                let idx = page.pageindex,
+                    pages = [];
+                for (let i=0; i<this.radius; i++){
+                    idx -= 1;
+                    if (idx <= 1)
+                        break;
+                    pages.unshift(idx);
+                }
+                return pages;
+            },
+            after: function (page) {
+                let idx = page.pageindex,
+                    maxp = page.pagecount,
+                    pages = [];
+                for (let i=0; i<this.radius; i++){
+                    idx += 1;
+                    if (idx >= maxp)
+                        break;
+                    pages.push(idx);
+                }
+                return pages
+            }
+        }
+    });
+}
 
 
 // display error info in manage pages.

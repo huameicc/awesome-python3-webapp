@@ -10,7 +10,7 @@
 
 class Page:
     """分页信息"""
-    def __init__(self, itemcount, pageindex=1, pagesize=10):
+    def __init__(self, itemcount, pageindex=1, pagesize=2):
         self.itemcount = itemcount
         self.pagesize = max(pagesize, 1)
         self.pagecount = itemcount // self.pagesize + (itemcount % self.pagesize and 1)

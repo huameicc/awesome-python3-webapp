@@ -1,0 +1,77 @@
+
+<!-- for good look and handy edit -->
+<ul v-if="page" class="uk-pagination" :page="page">
+  <li v-if="page.hasprev"><a href="#" @click="goto(page.pageindex-1)"><i class="uk-icon-angle-double-left"></i></a></li>
+  <li v-else class="uk-disabled"><span><i class="uk-icon-angle-double-left"></i></span></li>
+  <li v-if="page.hasprev"><a @click="goto(1)">1</a></li>
+  <li v-if="page.pageindex > 4"><span>...</span></li>
+  <li v-for="p in before(page)"><a @click="goto(p)">{{ p }}</a></li>
+  <li class="uk-active"><span>{{ page.pageindex }}</span></li>
+  <li v-for="p in after(page)"><a @click="goto(p)">{{ p }}</a></li>
+  <li v-if="page.pageindex < page.pagecount-3"><span>...</span></li>
+  <li v-if="page.hasnext"><a @click="goto(page.pagecount)">{{ page.pagecount }}</a></li>
+  <li v-if="page.hasnext"><a href="#" @click="goto(page.pageindex+1)"><i class="uk-icon-angle-double-right"></i></a>
+  </li>
+  <li v-else class="uk-disabled"><span><i class="uk-icon-angle-double-left"></i></span></li>
+</ul>
+
+<!--
+<div id="vm">
+  <pagination :page="page"></pagination>
+</div>
+-->
+
+<script>
+//pagination component
+// << 1 .. 3 4 5 6 7 .. 20 >>
+Vue.component('pagination', {
+    props: ['page'],
+    data: function () {
+        return {
+            radius: 2
+        }
+    },
+    template: '<ul v-if="page.pageindex" class="uk-pagination" :page="page">\n' +
+    '  <li v-if="page.hasprev"><a href="#" @click="goto(page.pageindex-1)"><i class="uk-icon-angle-double-left"></i></a></li>\n' +
+    '  <li v-else class="uk-disabled"><span><i class="uk-icon-angle-double-left"></i></span></li>\n' +
+    '  <li v-if="page.hasprev"><a @click="goto(1)">1</a></li>\n' +
+    '  <li v-if="page.pageindex > 4"><span>...</span></li>\n' +
+    '  <li v-for="p in before(page)"><a @click="goto(p)">{{ p }}</a></li>\n' +
+    '  <li class="uk-active"><span>{{ page.pageindex }}</span></li>\n' +
+    '  <li v-for="p in after(page)"><a @click="goto(p)">{{ p }}</a></li>\n' +
+    '  <li v-if="page.pageindex < page.pagecount - 3"><span>...</span></li>\n' +
+    '  <li v-if="page.hasnext"><a @click="goto(page.pagecount)">{{ page.pagecount }}</a></li>\n' +
+    '  <li v-if="page.hasnext"><a href="#" @click="goto(page.pageindex+1)"><i class="uk-icon-angle-double-right"></i></a></li>\n' +
+    '  <li v-else class="uk-disabled"><span><i class="uk-icon-angle-double-right"></i></span></li>\n' +
+    '</ul>',
+    methods: {
+        goto: function (pageidx) {
+            return goPage(pageidx);
+        },
+        before: function (page) {
+            console.log('before, ' + page)
+            let idx = page.pageindex,
+                pages = [];
+            for (let i = 0; i < this.radius; i++) {
+                idx -= 1;
+                if (idx <= 1)
+                    break;
+                pages.unshift(idx);
+            }
+            return pages;
+        },
+        after: function (page) {
+            let idx = page.pageindex,
+                maxp = page.pagecount,
+                pages = [];
+            for (let i = 0; i < this.radius; i++) {
+                idx += 1;
+                if (idx >= maxp)
+                    break;
+                pages.push(idx);
+            }
+            return pages
+        }
+    }
+});
+</script>

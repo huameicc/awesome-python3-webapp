@@ -41,6 +41,7 @@
         </td>
       </tr>
     </table>
+    <pagination :page="page"></pagination>
   </div>
 </div>
 {% endblock %}
@@ -49,6 +50,7 @@
 {% block bodyend %}
 <script>
     let pageindex = '{{ pageindex }}';
+    let vm;
 
     function initVM(data) {
         return new Vue({
@@ -73,7 +75,7 @@
     }
 
     $(document).ready(function () {
-          let vm = initVM({
+          vm = initVM({
               page: {},
               blogs: {},
           });
@@ -85,6 +87,7 @@
               vm.page = data.page;
               vm.blogs = data.blogs;
           });
+          // new Vue({ el: '#components-demo' });
     });
 </script>
 {% endblock %}
