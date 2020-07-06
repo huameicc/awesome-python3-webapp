@@ -13,10 +13,11 @@ import re
 import hashlib
 import json
 import functools
+import markdown2
 from aiohttp import web
 
 from aioweb import get, post, template
-from model import User, Blog, generate_id
+from model import User, Blog, Comment, generate_id
 from api import ApiValueError, ApiError, ApiResourceNotFoundError, ApiPermissionError, Page
 from config import configs as cfgs
 
@@ -28,16 +29,18 @@ _RE_EMAIL = re.compile(r'^[a-z0-9\-._]+@[a-z0-9\-_]+(?:\.[a-z0-9\-_]+){1,4}$')
 _RE_SHA1 = re.compile(r'^[a-f0-9]{40}$')
 
 
-@get('/test')
+@get('/test/users')
 @template('test.html')
-async def test():
+async def test_users():
+    """  test_page: show users """
     users = await User.find_by()
     return dict(users=users)
 
 
-@get('/')
+@get('/test/blogs')
 @template('blogs.html')
-async def index():
+async def test_index():
+    """ test_page: show index(blogs)"""
     summary = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore' \
               ' et dolore magna aliqua.'
     blogs = [Blog(id="tsb1", name="Blog Test 1", summary=summary, createtime=time.time() - 10),
@@ -46,6 +49,14 @@ async def index():
              Blog(id="tsb4", name="Blog Test 4", summary=summary, createtime=time.time() - 86400),
              Blog(id="tsb5", name="Blog Test 5", summary=summary, createtime=time.time() - 86400 * 10)]
     return dict(blogs=blogs)
+
+
+@get('/')
+@template('blogs.html')
+async def index(pageindex='1'):
+    """Main_Page: blogs"""
+    data = await api_get_blogs(pageindex)
+    return data
 
 
 @get('/api/users')
@@ -187,6 +198,19 @@ def parse_pageindex(pageindex):
     return max(1, pindex)
 
 
+@get('/blog/{blogid}')
+@template('blog_detail.html')
+async def blog_detail(blogid):
+    blog = await Blog.find(blogid)
+    if not blog:
+        raise ApiResourceNotFoundError(msg= 'this blog does not exist anymore!')
+    blog.html = markdown2.markdown(blog.content)
+    comments = await Comment.find_by(blog_id=blogid)
+    for cmt in comments:
+        cmt.html = markdown2.markdown(cmt.content)
+    return dict(blog=blog, comments=comments)
+
+
 @get('/manage/blogs')
 @template('manage_blogs.html')
 def manage_blogs(pageindex="1"):
@@ -207,6 +231,7 @@ def edit_blog(blogid):
 
 @get('/api/blogs')
 async def api_get_blogs(pageindex='1'):
+    """rest api: 获取一页博客，及分页信息"""
     pindex = parse_pageindex(pageindex)
     count = await Blog.find_count()
     page = Page(count, pindex)
@@ -258,3 +283,18 @@ async def api_delete_blog(request, blogid):
         logging.error('delete blog error: %s rows affected.' % rs)
         raise ApiError('delete-blog:failed', msg='blog not exists.')
     return dict(blogid=blogid)
+
+@post('/api/comment/create')
+async def api_create_comment(request, blogid, content):
+    _user = request.__user__
+    if not _user:
+        raise ApiPermissionError('用户似乎不在登录状态.')
+    content = content.strip()
+    if not content:
+        raise ApiValueError('content', 'content of comment is empty.')
+    comment = Comment(blog_id=blogid, user_id=_user.id, user_name=_user.name, user_image=_user.image, content=content)
+    rs = await comment.insert()
+    if rs != 1:
+        logging.error('insert comment error: %s rows affected.' % rs)
+        raise ApiError('insert-comment:failed', msg='insert comment failed.')
+    return dict(comment=comment)

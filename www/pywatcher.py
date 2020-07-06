@@ -68,6 +68,7 @@ if __name__ == '__main__':
     print(argv)
     if not argv:
         argv = ['python', './app.py']
+        # argv = ['python', '--version', '&', 'pip', '--version']
         # argv = ['cmd', '/k', 'date /t']
     if len(argv) == 1 and not argv[0].startswith('python'):
         argv.insert(0, 'python')

@@ -1,0 +1,94 @@
+{% extends '__base__.html' %}
+
+{% block title %}{{ blog.name }}{% endblock %}
+
+{% block content %}
+<div class="uk-grid" data-uk-grid-margin>
+  <div class="uk-width-medium-3-4">
+    <article class="uk-article">
+      <h2 class="uk-article-title"><a href="/blog/{{blog.id}}">{{blog.name}}</a></h2>
+      <p class="uk-article-meta">发表于{{blog.createtime|datetime}}</p>
+      <p>{{ blog.html|safe }}</p>
+    </article>
+    <hr class="uk-article-divider"/>
+    <hr class="uk-article-divider"/>
+
+    <h2>发表评论:</h2>
+    {% if user %}
+    <article class="uk-comment">
+      <header class="uk-comment-header">
+        <img class="uk-comment-avatar" src="{{ user.image }}" width="30" height="30">
+        <h4 class="uk-comment-title">{{ user.name }}</h4>
+      </header>
+      <form id="add-comment" class="uk-form uk-form-stacked">
+        <div class="uk-alert uk-alert-danger uk-hidden"></div>
+        <textarea class="uk-width-1-1" placeholder="欢迎评论" rows="4" style="resize: none"></textarea>
+        <button class="uk-button uk-button-primary" type="submit"><i class="uk-icon-comment-o"></i> 发表</button>
+      </form>
+    </article>
+    {% else %}
+    <div><a class="uk-button uk-button-primary uk-border-rounded" href="/signin"><i class="uk-icon-sign-in"></i> 登录</a><span>后发表评论</span></div>
+    {% endif %}
+    <hr class="uk-article-divider"/>
+
+    <h2>最新评论:</h2>
+    <ul class="uk-comment-list">
+      {% for comment in comments %}
+      <li>
+        <article class="uk-comment">
+          <header class="uk-comment-header">
+            <img class="uk-comment-avatar" src="{{ comment.user_image }}" width="30" height="30">
+            <h4 class="uk-comment-title">{{ comment.user_name }}</h4>
+            <div class="uk-comment-meta">{{ comment.createtime|datetime }}</div>
+          </header>
+          <div class="uk-comment-body">{{ comment.html|safe }}</div>
+        </article>
+      </li>
+      {% else %}
+      <p class="uk-text-center">评论区空空如也～</p>
+      {% endfor %}
+    </ul>
+
+  </div>
+
+  <div class="uk-width-medium-1-4">
+    <div class="uk-panel uk-panel-box uk-panel-box-primary uk-text-center">
+      <img class="uk-border-circle"  width="60" heigth="60" src="{{ blog.user_image }}">
+      <h3>发布者: {{ blog.user_name }}</h3>
+    </div>
+    <div class="uk-panel uk-panel-box uk-panel-box-primary">
+        <h3 class="uk-panel-title">Links</h3>
+        <ul class="uk-list uk-list-space">
+          <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="#">编程</a></li>
+          <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="#">python</a></li>
+          <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="#">web</a></li>
+          <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="#">uikit</a></li>
+          <li><i class="uk-icon-thumbs-o-up"></i> <a target="_blank" href="#">jquery</a></li>
+        </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block bodyend %}
+<script>
+let blogid = '{{ blog.id }}';
+
+$(document).ready(function () {
+    $('#add-comment').submit(function (evt) {
+        evt.preventDefault();
+        let $form = $(this),
+            content = $form.find('textarea').val().trim();
+        if (! content) {
+            $form.showFormError('评论不能为空.');
+        }
+        $form.postJson('/api/comment/create', {blogid: blogid, content: content}, function (err, data) {
+            if (err) {
+                return $form.showFormError(err);
+            }
+            refresh();
+        })
+    })
+});
+</script>
+{% endblock %}
