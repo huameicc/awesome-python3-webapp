@@ -320,7 +320,7 @@ class Model(metaclass=ModelMetaclass):
         args = list(map(self.getvalue_ordefault, self.__allfields__))
         affected = await execute(self.__insert__ + ';', args)
         if affected != 1:
-            logging.warning('<%s object> insert error: %s rows affected.') % (self.__class__.__name__, affected)
+            logging.warning('<%s object> insert error: %s rows affected.' % (self.__class__.__name__, affected))
         return affected
 
     async def update(self):
@@ -331,7 +331,7 @@ class Model(metaclass=ModelMetaclass):
         args = list(map(self.getvalue_ordefault, self.__fields__))
         affected = await execute(self.__update__ + where_sql + ';', args=args + list(where_args))
         if affected != 1:
-            logging.warning('<%s object> update error: %s rows affected.') % (self.__class__.__name__, affected)
+            logging.warning('<%s object> update error: %s rows affected.' % (self.__class__.__name__, affected))
         return affected
 
     @classmethod
@@ -358,7 +358,7 @@ class Model(metaclass=ModelMetaclass):
         where_sql, where_args = self._sql_condition_pk(getattr(self, self.__primarykey__))
         affected = await execute(self.__remove__ + where_sql + ';', args=where_args)
         if affected != 1:
-            logging.warning('<%s object> remove error: %s rows affected.') % (self.__class__.__name__, affected)
+            logging.warning('<%s object> remove error: %s rows affected.' % (self.__class__.__name__, affected))
         return affected
 
     @classmethod
