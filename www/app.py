@@ -93,11 +93,11 @@ def datetimeflt(val: float):
     if t < 60:
         return '1分钟前'
     if t < 3600:
-        return '%s分钟前' % (t // 60)
+        return '%.f分钟前' % (t // 60)
     if t < 86400:
-        return '%s小时前' % (t // 3600)
+        return '%.f小时前' % (t // 3600)
     if t < 604800:
-        return '%s天前' % (t // 86400)
+        return '%.f天前' % (t // 86400)
     return datetime.datetime.fromtimestamp(t).strftime('%Y-%m-%d %H:%M:%S')
 
 

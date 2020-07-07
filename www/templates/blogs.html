@@ -14,7 +14,12 @@
     </article>
     <hr class="uk-article-divider"/>
     {% endfor %}
+
+    <div id="blog-pagination">
+      <pagination :page="page"></pagination>
+    </div>
   </div>
+
   <div class="uk-width-medium-1-4">
     <div class="uk-panel uk-panel-box uk-panel-box-primary">
         <h3 class="uk-panel-title">Links</h3>
@@ -28,4 +33,19 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block bodyend %}
+<script>
+let page = JSON.parse('{{ page.__dict__|tojson }}');
+
+$(document).ready(function () {
+    new Vue({
+        el: '#blog-pagination',
+        data: {
+            page: page
+        }
+    })
+});
+</script>
 {% endblock %}

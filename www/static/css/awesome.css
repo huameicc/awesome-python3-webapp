@@ -1,0 +1,48 @@
+/**
+css style
+ */
+
+/*a:hover, a:active {*/
+/*text-decoration: none;*/
+/*}*/
+
+/**
+uikit style adjustment
+ */
+html {
+  /*background-color: beige;*/
+}
+
+#header-navbar {
+  /*background-color: black;*/
+  /*padding-top: 10px;*/
+  /*padding-bottom: 10px;*/
+}
+
+#header-navbar .uk-navbar-brand {
+  padding-left: 0;
+}
+
+#header-navbar .uk-dropdown-navbar {
+  /*background-color: green;*/
+  border: 1px solid #E5E5E5;
+}
+
+.uk-navbar-attached {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.uk-comment-header {
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #E5E5E5;
+  border-radius: 4px;
+  background: #fafafa;
+}
+
+.uk-comment-body {
+  padding-left: 10px;
+  padding-right: 10px;
+}

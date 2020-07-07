@@ -18,6 +18,7 @@
   {% block meta %}{% endblock %}
   <title>{% block title %} this is title {% endblock %}</title>
   <link rel="stylesheet" href="/static/css/uikit.min.css">
+  <link rel="stylesheet" href="/static/css/awesome.css">
   <script src="/static/js/jquery-3.5.1.min.js"></script>
   <script src="/static/js/sha1.js"></script>
   <script src="/static/js/uikit.min.js"></script>
@@ -29,9 +30,9 @@
 <body class="uk-height-1-1">
 <div id="root" class="uk-flex uk-flex-column uk-flex-space-between uk-height-1-1">
   <div id="root-top">
-    <nav class="uk-navbar uk-navbar-attached uk-margin-bottom">
+    <nav id='header-navbar' class="uk-navbar uk-navbar-attached uk-margin-bottom uk-width-1-1">
       <div class="uk-container uk-container-center">
-        <a href="/" class="uk-navbar-brand">Async-Blog</a>
+        <a href="/" class="uk-navbar-brand">AWESOME</a>
         <ul class="uk-navbar-nav">
           <li data-url="blogs"><a href="/"><i class="uk-icon-home"></i> Blog</a></li>
           <li><a target="_blank" href="#"><i class="uk-icon-book"></i> Tutorial</a></li>
@@ -40,10 +41,13 @@
         <div class="uk-navbar-flip">
           <nav class="uk-navbar-nav">
             {% if user %}
-            <li class="uk-parent" data-uk-dropdown>
-              <a href><i class="uk-icon-user"></i> {{ user.name }}</a>
-              <div class="uk-dropdown uk-dropdown-navbar uk-dropdown-bottom">
+            <li class="uk-parent" data-uk-dropdown> <!-- ="{mode:'click'}" -->
+              <a href><i class="uk-icon-user"></i> {{ user.name }}</i></a>
+              <div class="uk-dropdown uk-dropdown-navbar uk-dropdown-bottom uk-dropdown-small">
                 <ul class="uk-nav uk-nav-navbar">
+                  {% if user.admin %}
+                  <li><a href="/manage/blogs"><i class="uk-icon-wrench"></i> 管理</a></li>
+                  {% endif %}
                   <li><a href="/signout"><i class="uk-icon-sign-out"></i> 退出</a></li>
                 </ul>
               </div>
