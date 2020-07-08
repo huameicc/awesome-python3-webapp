@@ -263,8 +263,18 @@ class Model(metaclass=ModelMetaclass):
         :param orders: tuple list, (field, 1/0), 1: asc, 0 desc
         :return:
         """
+        if not orders:
+            return ''
+        _ords = []
+        for order in orders:
+            if isinstance(order, str):
+                _ords.append((order, 1))
+            elif not isinstance(order, (list, tuple)) or len(order) != 2:
+                raise ValueError('bad value: %s. -- orders should be a list of (field, 0/1) or field!' % order)
+            else:
+                _ords.append(order)
         return ' order by %s' % ', '.join(map(lambda t: '`%s` %s' % (cls.fieldname(t[0]), 'asc' if t[1] else 'desc')
-                                              , orders)) if orders else ''
+                                              , _ords)) if _ords else ''
 
     @staticmethod
     def _sql_limit(limit):
@@ -296,7 +306,7 @@ class Model(metaclass=ModelMetaclass):
         """
         where 查询
         :param orders:  tuple list, (field, 1/0), 1: asc, 0 desc
-        :param limit: 分页 limit <limit>, <offset>; 可以接受单值<limit>或者长度为2的list/tuple
+        :param limit: 分页 limit <offset>, <limit>; 可以接受单值<limit>或者长度为2的list/tuple (<offset>, <limit>)
         :param kwargs: where condition
         :return:
         """
