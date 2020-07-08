@@ -1,6 +1,6 @@
 {% extends '__base__.html' %}
 
-{% block title %}Manage Blogs{% endblock %}
+{% block title %}Manage Comments{% endblock %}
 
 {% block head %}
 {% endblock %}
@@ -9,8 +9,8 @@
 <div class="uk-grid">
   <div class="uk-width-1-1 uk-margin-bottom uk-panel uk-panel-box">
     <ul class="uk-breadcrumb">
-      <li><a href="/manage/comments">评论</a></li>
-      <li><span class="uk-active">文章</span></li>
+      <li><span class="uk-active">评论</span></li>
+      <li><a href="/manage/blogs">文章</a></li>
       <li><a href="/manage/users">用户</a></li>
     </ul>
   </div>
@@ -22,22 +22,22 @@
     <p><i class="uk-icon-spinner uk-icon-medium uk-icon-spin"></i>加载中...</p>
   </div>
 
-  <div id="manage-blog" class="uk-width-1-1 uk-padding-remove">
-    <a href="/manage/blog/create" class="uk-button uk-button-primary"><i class="uk-icon-plus"></i> 新文章</a>
+  <div id="manage-comment" class="uk-width-1-1 uk-padding-remove">
     <table class="uk-table uk-table-hover">
       <thead>
-        <th class="uk-width-5-10">标题</th>
-        <th class="uk-width-2-10">作者</th>
+        <th class="uk-width-4-10">评论</th>
+        <th class="uk-width-2-10">博客</th>
+        <th class="uk-width-1-10">评论人</th>
         <th class="uk-width-2-10">创建时间</th>
         <th class="uk-width-1-10">操作</th>
       </thead>
-      <tr v-for="blog in blogs">
-        <td><a target="_blank" :href="'/blog/' + blog.id">{{ '{{ blog.name }}' }}</a></td>
-        <td><a target="_blank" :href="blog.user_image">{{ '{{ blog.user_name }}' }}</a></td>
-        <td><span>{{ '{{ blog.createtime.toDate().formatStr() }}' }}</span></td>
+      <tr v-for="comment in comments">
+        <td><span>{{ '{{ comment.content }}' }}</span></td>
+        <td><a target="_blank" :href="'/blog/' + comment.blog_id" :title="comment.blog_name">{{ '{{ comment.blog_name.slice(0, 8) }}' }}</a></td>
+        <td><a target="_blank" :href="comment.user_image">{{ '{{ comment.user_name }}' }}</a></td>
+        <td><span>{{ '{{ comment.createtime.toDate().formatStr() }}' }}</span></td>
         <td>
-          <a @click="editBlog(blog)" class="uk-icon-edit uk-margin-small-right"></a>
-          <a @click="deleBlog(blog)" class="uk-icon-trash-o"></a>
+          <a @click="deleUser(user)" class="uk-icon-trash-o"></a>
         </td>
       </tr>
     </table>
@@ -50,19 +50,19 @@
 {% block bodyend %}
 <script>
     let pageindex = '{{ pageindex }}';
-    let vm;
+    // let vm;
 
     function initVM(data) {
         return new Vue({
-            el: '#manage-blog',
+            el: '#manage-comment',
             data: data,
             methods: {
-                editBlog: function (blog) {
-                    return location.assign('/manage/blog/edit?blogid=' + blog.id)
+                editUser: function (comment) {
+                    return location.assign('/manage/comment/edit?commentid=' + comment.id)
                 },
-                deleBlog: function (blog) {
-                    if (confirm('删除后无法恢复，是否确认要删除？')) {
-                        postJson('/api/blog/delete', {blogid: blog.id}, function (err, data) {
+                deleUser: function (comment) {
+                    if (confirm('删除用户后无法恢复，是否确认要删除？')) {
+                        postJson('/api/comment/delete', {commentid: comment.id}, function (err, data) {
                             if (err) {
                                 return alert(err.message || err.error || err);
                             }
@@ -75,19 +75,18 @@
     }
 
     $(document).ready(function () {
-          vm = initVM({
+          let vm = initVM({
               page: {},
-              blogs: {},
+              comments: {},
           });
-          getJson('/api/blogs', {pageindex: pageindex}, function (err, data) {
+          getJson('/api/comments', {pageindex: pageindex}, function (err, data) {
               if (err) {
                   return showFatal(err);
               }
               $('#loading, #error').hide();
               vm.page = data.page;
-              vm.blogs = data.blogs;
+              vm.comments = data.comments;
           });
-          // new Vue({ el: '#components-demo' });
     });
 </script>
 {% endblock %}

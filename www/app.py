@@ -20,7 +20,8 @@ from aioweb import scan_add_routes, add_static
 from handler import cookie2user, COOKIE_NAME
 
 
-logging.basicConfig(level='INFO')
+LOG_FORMAT = '%(asctime)s - %(levelname)s : %(message)s'
+logging.basicConfig(level='INFO', format=LOG_FORMAT)
 
 
 @web.middleware

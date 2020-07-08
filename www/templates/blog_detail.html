@@ -22,8 +22,12 @@
       </header>
       <form id="add-comment" class="uk-form uk-form-stacked">
         <div class="uk-alert uk-alert-danger uk-hidden"></div>
-        <textarea class="uk-width-1-1" placeholder="欢迎评论" rows="4" style="resize: none"></textarea>
-        <button class="uk-button uk-button-primary" type="submit"><i class="uk-icon-comment-o"></i> 发表</button>
+        <div class="uk-form-row">
+          <textarea class="uk-width-1-1" placeholder="欢迎评论" rows="4" style="resize: none"></textarea>
+        </div>
+        <div class="uk-form-row">
+          <button class="uk-button uk-button-primary" type="submit"><i class="uk-icon-comment-o"></i> 发表</button>
+        </div>
       </form>
     </article>
     {% else %}

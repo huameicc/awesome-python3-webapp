@@ -21,6 +21,11 @@ html {
 
 #header-navbar .uk-navbar-brand {
   padding-left: 0;
+  padding-right: 0;
+}
+
+#header-navbar .uk-navbar-brand img {
+  padding: 5px 0;
 }
 
 #header-navbar .uk-dropdown-navbar {

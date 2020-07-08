@@ -29,15 +29,19 @@ _RE_EMAIL = re.compile(r'^[a-z0-9\-._]+@[a-z0-9\-_]+(?:\.[a-z0-9\-_]+){1,4}$')
 _RE_SHA1 = re.compile(r'^[a-f0-9]{40}$')
 
 
+# test use
+
 @get('/test/users')
 @template('test.html')
 async def test_users():
     """  test_page: show users """
     users = await User.find_by()
+    for u in users:
+        u.passwd = '******'
     return dict(users=users)
 
 
-@get('/test/blogs')
+@get('/test/index')
 @template('blogs.html')
 async def test_index():
     """ test_page: show index(blogs)"""
@@ -51,6 +55,7 @@ async def test_index():
     return dict(blogs=blogs)
 
 
+# main page
 @get('/')
 @template('blogs.html')
 async def index(pageindex='1'):
@@ -59,14 +64,7 @@ async def index(pageindex='1'):
     return data
 
 
-@get('/api/users')
-async def api_get_users():
-    users = await User.find_by()
-    for u in users:
-        u.passwd = '******'
-    return dict(users=users)
-
-
+# user_functions
 def user2cookie(user, max_age):
     expires = str(int(time.time()) + max_age)
     pss = '%s:%s:%s:%s' % (user.id, user.passwd, expires, _COOKIE_KEY)
@@ -75,7 +73,7 @@ def user2cookie(user, max_age):
 
 
 def _user_response(user):
-    """ set_cookie, return user json"""
+    """construct a request to set_cookie(for logon state), return web.json_response(user)"""
     user_cookie = user2cookie(user, max_age=_COOKIE_MAX_AGE)
     user.passwd = '******'
     resp = web.json_response(data=user, dumps=functools.partial(json.dumps, default=lambda x: x.__dict__))
@@ -120,6 +118,7 @@ def check_permission(request):
     return _user
 
 
+# user pages|operations signup/in/out
 @get('/signup')
 @template('register.html')
 def signup():
@@ -139,6 +138,7 @@ def signout():
     raise resp
 
 
+# user sign-up apis: register, authenticate
 @post('/api/register')
 async def api_register(name, email, passwd):
     if not name or not name.strip():
@@ -177,18 +177,26 @@ async def api_authenticate(email, passwd):
     return _user_response(user)
 
 
-def check_blog_empty(name, summary, content):
-    """blog fields cannot be empty."""
-    name, summary, content = name.strip(), summary.strip(), content.strip()
-    if not name:
-        raise ApiValueError('name', 'Blog need a title.')
-    if not summary:
-        raise ApiValueError('summary', 'Summary cannot be empty.')
-    if not content:
-        raise ApiValueError('content', 'Content cannot be empty.')
-    return name, summary, content
+# user page: users-manage-panel(admin)
+@get('/manage/users')
+@template('manage_users.html')
+def manage_users(pageindex='1'):
+    return dict(pageindex=parse_pageindex(pageindex))
 
 
+# user api: get_by_page
+@get('/api/users')
+async def api_get_users(pageindex='1'):
+    pindex = parse_pageindex(pageindex)
+    count = await User.find_count()
+    page = Page(itemcount=count, pageindex=pindex)
+    users = await User.find_by(orders=[('createtime', 0)], limit=(page.offset, page.limit))
+    for u in users:
+        u.passwd = '******'
+    return dict(users=users, page=page)
+
+
+# parse pageindex
 def parse_pageindex(pageindex):
     """pageindex str to int."""
     pindex = 1
@@ -199,10 +207,30 @@ def parse_pageindex(pageindex):
     return max(1, pindex)
 
 
+# blog content check
+def check_blog_content(name, summary, content):
+    """blog fields cannot be empty."""
+    name, summary, content = name.strip(), summary.strip(), content.strip()
+    if not name:
+        raise ApiValueError('name', 'Blog need a title.')
+    if not summary:
+        raise ApiValueError('summary', 'Summary cannot be empty.')
+    if not content:
+        raise ApiValueError('content', 'Content cannot be empty.')
+    if len(summary) > 200:
+        raise ApiValueError('summary', 'Summary is too long.')
+    return name, summary, content
+
+
+# blog pages: blog-page, blogs-manage-panel(admin), blog-create/edit-page(admin)
+
 @get('/blog/{blogid}')
 @template('blog_detail.html')
 async def blog_detail(blogid):
-    """blog detail and comments."""
+    """
+    page for one article & its comments.
+    didn't use a rest-api. data is retrieved from db directly and then renderred by jinja2.
+    """
     blog = await Blog.find(blogid)
     if not blog:
         raise ApiResourceNotFoundError(msg= 'this blog does not exist anymore!')
@@ -217,24 +245,29 @@ async def blog_detail(blogid):
 @get('/manage/blogs')
 @template('manage_blogs.html')
 def manage_blogs(pageindex="1"):
+    """page for blogs manage panel"""
     return dict(pageindex=parse_pageindex(pageindex))
 
 
 @get('/manage/blog/create')
 @template('edit_blog.html')
 def create_blog():
+    """page for create a new article."""
     return dict(blogid='', action='/api/blog/create')
 
 
 @get('/manage/blog/edit')
 @template('edit_blog.html')
 def edit_blog(blogid):
+    """page for edit an existed article."""
     return dict(blogid=blogid, action='/api/blog/update')
 
 
+# blog apis: get-by-page | get-by-id, create, update, delete
+
 @get('/api/blogs')
 async def api_get_blogs(pageindex='1'):
-    """rest api: 获取一页博客，及分页信息"""
+    """rest api: 获取一页博客，及分页信息; 可被网站首页及博客管理面板使用"""
     pindex = parse_pageindex(pageindex)
     count = await Blog.find_count()
     page = Page(count, pindex)
@@ -244,6 +277,7 @@ async def api_get_blogs(pageindex='1'):
 
 @get('/api/blog/{blogid}')
 async def api_get_blog(blogid):
+    """ get one id-specified article """
     blogs = await Blog.find_by(id=blogid)
     if not blogs:
         raise ApiResourceNotFoundError('blog', 'blog not exists.')
@@ -252,8 +286,9 @@ async def api_get_blog(blogid):
 
 @post('/api/blog/create')
 async def api_create_blog(request, name, summary, content):
+    """ create an article"""
     _user = check_permission(request)
-    name, summary, content = check_blog_empty(name, summary, content)
+    name, summary, content = check_blog_content(name, summary, content)
     # insert new blog
     blog = Blog(user_id=_user.id, user_name=_user.name, user_image=_user.image, name=name, summary=summary,
                 content=content)
@@ -266,8 +301,9 @@ async def api_create_blog(request, name, summary, content):
 
 @post('/api/blog/update')
 async def api_update_blog(request, name, summary, content, id, **kwargs):
+    """ update an article """
     check_permission(request)
-    name, summary, content = check_blog_empty(name, summary, content)
+    name, summary, content = check_blog_content(name, summary, content)
     # update
     rs = await Blog.update_by(set_dict=dict(name=name, summary=summary, content=content), where_dict=dict(id=id))
     if rs != 1:
@@ -280,6 +316,7 @@ async def api_update_blog(request, name, summary, content, id, **kwargs):
 
 @post('/api/blog/delete')
 async def api_delete_blog(request, blogid):
+    """ delete one article """
     check_permission(request)
     rs = await Blog.remove_by(id=blogid)
     if rs != 1:
@@ -287,8 +324,31 @@ async def api_delete_blog(request, blogid):
         raise ApiError('delete-blog:failed', msg='blog not exists.')
     return dict(blogid=blogid)
 
+
+# comment page: comments-manage-panel(admin)
+@get('/manage/comments')
+@template('manage_comments.html')
+def manage_comments(pageindex='1'):
+    return dict(pageindex=parse_pageindex(pageindex))
+
+
+# comment api: get_by_page, create
+
+@get('/api/comments')
+async def api_get_comments(pageindex='1'):
+    pindex = parse_pageindex(pageindex)
+    count = await Comment.find_count()
+    page = Page(itemcount=count, pageindex=pindex)
+    comments = await Comment.find_by(orders=[('createtime', 0)], limit=(page.offset, page.limit))
+    for comt in comments:
+        blog = await Blog.find(comt.blog_id)
+        comt.blog_name = blog.name if blog else ''
+    return dict(comments=comments, page=page)
+
+
 @post('/api/comment/create')
 async def api_create_comment(request, blogid, content):
+    """ create one comment for specified article """
     _user = request.__user__
     if not _user:
         raise ApiPermissionError('用户似乎不在登录状态.')
