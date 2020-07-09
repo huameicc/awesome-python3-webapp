@@ -37,7 +37,7 @@
         <td><a target="_blank" :href="comment.user_image">{{ '{{ comment.user_name }}' }}</a></td>
         <td><span>{{ '{{ comment.createtime.toDate().formatStr() }}' }}</span></td>
         <td>
-          <a @click="deleUser(user)" class="uk-icon-trash-o"></a>
+          <a @click="deleComment(comment)" class="uk-icon-trash-o"></a>
         </td>
       </tr>
     </table>
@@ -57,11 +57,18 @@
             el: '#manage-comment',
             data: data,
             methods: {
-                editUser: function (comment) {
+                editComment: function (comment) {
                     return location.assign('/manage/comment/edit?commentid=' + comment.id)
                 },
-                deleUser: function (comment) {
-                    if (confirm('删除用户后无法恢复，是否确认要删除？')) {
+                deleComment: function (comment) {
+                    let short;
+                    if (comment.content.length <= 50) {
+                        short = comment.content;
+                    }
+                    else {
+                        short = comment.content.slice(0, 48) + '...'
+                    }
+                    if (confirm('删除评论后无法恢复，是否确认要删除这条评论？\n\n' + short)) {
                         postJson('/api/comment/delete', {commentid: comment.id}, function (err, data) {
                             if (err) {
                                 return alert(err.message || err.error || err);

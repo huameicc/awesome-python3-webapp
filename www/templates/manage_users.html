@@ -59,8 +59,8 @@
                     return location.assign('/manage/user/edit?userid=' + user.id)
                 },
                 deleUser: function (user) {
-                    if (confirm('删除用户后无法恢复，是否确认要删除？')) {
-                        postJson('/api/user/delete', {blogid: user.id}, function (err, data) {
+                    if (confirm('删除用户后无法恢复，是否确认要删除用户' + user.name + '?')) {
+                        postJson('/api/user/delete', {userid: user.id}, function (err, data) {
                             if (err) {
                                 return alert(err.message || err.error || err);
                             }

@@ -184,7 +184,7 @@ def manage_users(pageindex='1'):
     return dict(pageindex=parse_pageindex(pageindex))
 
 
-# user api: get_by_page
+# user api: get_by_page, delete
 @get('/api/users')
 async def api_get_users(pageindex='1'):
     pindex = parse_pageindex(pageindex)
@@ -194,6 +194,16 @@ async def api_get_users(pageindex='1'):
     for u in users:
         u.passwd = '******'
     return dict(users=users, page=page)
+
+
+@post('/api/user/delete')
+async def api_delete_user(request, userid):
+    check_permission(request)
+    rs = await User.remove_by(id=userid)
+    if rs != 1:
+        logging.error('delete user error: %s rows affected.' % rs)
+        raise ApiError('delete-user:failed', msg='comment does not exist!')
+    return dict(userid=userid)
 
 
 # parse pageindex
@@ -280,7 +290,7 @@ async def api_get_blog(blogid):
     """ get one id-specified article """
     blogs = await Blog.find_by(id=blogid)
     if not blogs:
-        raise ApiResourceNotFoundError('blog', 'blog not exists.')
+        raise ApiResourceNotFoundError('blog', 'blog does not exist!')
     return dict(blog=blogs[0])
 
 
@@ -308,7 +318,7 @@ async def api_update_blog(request, name, summary, content, id, **kwargs):
     rs = await Blog.update_by(set_dict=dict(name=name, summary=summary, content=content), where_dict=dict(id=id))
     if rs != 1:
         logging.error('update blog error: %s rows affected.' % rs)
-        raise ApiError('update-blog:failed', msg='blog not exists.')
+        raise ApiError('update-blog:failed', msg='blog does not exist!')
     # return same blog
     blog = Blog(id=id, name=name, summary=summary, content=content, **kwargs)
     return dict(blog=blog)
@@ -321,7 +331,7 @@ async def api_delete_blog(request, blogid):
     rs = await Blog.remove_by(id=blogid)
     if rs != 1:
         logging.error('delete blog error: %s rows affected.' % rs)
-        raise ApiError('delete-blog:failed', msg='blog not exists.')
+        raise ApiError('delete-blog:failed', msg='blog does not exist!')
     return dict(blogid=blogid)
 
 
@@ -332,7 +342,7 @@ def manage_comments(pageindex='1'):
     return dict(pageindex=parse_pageindex(pageindex))
 
 
-# comment api: get_by_page, create
+# comment apis: get_by_page, create, delete
 
 @get('/api/comments')
 async def api_get_comments(pageindex='1'):
@@ -361,3 +371,14 @@ async def api_create_comment(request, blogid, content):
         logging.error('insert comment error: %s rows affected.' % rs)
         raise ApiError('insert-comment:failed', msg='insert comment failed.')
     return dict(comment=comment)
+
+
+@post('/api/comment/delete')
+async def api_delete_comment(request, commentid):
+    """delete one comment by id"""
+    check_permission(request)
+    rs = await Comment.remove_by(id=commentid)
+    if rs != 1:
+        logging.error('delete comment error: %s rows affected.' % rs)
+        raise ApiError('delete-comment:failed', msg='comment does not exist!')
+    return dict(commentid=commentid)
