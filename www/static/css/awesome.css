@@ -1,44 +1,49 @@
-/**
-css style
- */
+/**** customed css style ****/
+/*
+a:hover, a:active {
+text-decoration: none;
+}
 
-/*a:hover, a:active {*/
-/*text-decoration: none;*/
-/*}*/
-
-/**
-uikit style adjustment
- */
 html {
-  /*background-color: beige;*/
+  background-color: beige;
 }
+*/
 
+/****** uikit style adjustment ******/
+/**** main navbar  ****/
+/*
 #header-navbar {
-  /*background-color: black;*/
-  /*padding-top: 10px;*/
-  /*padding-bottom: 10px;*/
+  background-color: black;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
+*/
 
+/** navbar brand style **/
 #header-navbar .uk-navbar-brand {
   padding-left: 0;
   padding-right: 0;
 }
 
+/** use a img as navbar brand **/
 #header-navbar .uk-navbar-brand img {
   padding: 5px 0;
 }
 
+/** dropdown in navbar **/
 #header-navbar .uk-dropdown-navbar {
   /*background-color: green;*/
   border: 1px solid #E5E5E5;
 }
 
+/** uikit navbar-attached style fixed **/
 .uk-navbar-attached {
   position: sticky;
   top: 0;
   z-index: 2;
 }
 
+/** uikit comment style fixed **/
 .uk-comment-header {
   margin-bottom: 15px;
   padding: 10px;
