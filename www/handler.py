@@ -13,7 +13,7 @@ import re
 import hashlib
 import json
 import functools
-import markdown2
+import markdown2, bleach
 from aiohttp import web
 
 from aioweb import get, post, template
@@ -28,6 +28,12 @@ _COOKIE_MAX_AGE = 86400
 _RE_EMAIL = re.compile(r'^[a-z0-9\-._]+@[a-z0-9\-_]+(?:\.[a-z0-9\-_]+){1,4}$')
 _RE_SHA1 = re.compile(r'^[a-f0-9]{40}$')
 
+_MARK_DOWN_ROOT = markdown2.Markdown(html4tags=True,
+                                     extras=['code-friendly', 'fenced-code-blocks', 'footnotes', 'strike',
+                                             'target-blank-links', 'tables', 'tag-friendly', 'header-ids', 'toc'])
+_MARK_DOWN_COMMENT = markdown2.Markdown(html4tags=True,
+                                        extras=['code-friendly', 'fenced-code-blocks', 'footnotes', 'strike',
+                                                'target-blank-links', 'tables', 'tag-friendly', 'nofollow'])
 
 # test use
 
@@ -244,10 +250,11 @@ async def blog_detail(blogid):
     blog = await Blog.find(blogid)
     if not blog:
         raise ApiResourceNotFoundError(msg= 'this blog does not exist anymore!')
-    blog.html = markdown2.markdown(blog.content)
+    blog.html = _MARK_DOWN_ROOT.convert(blog.content)
     comments = await Comment.find_by(blog_id=blogid)
     for i, cmt in zip(range(len(comments)), comments):
-        cmt.html = markdown2.markdown(cmt.content)
+        # comment html tags disabled. 针对原来的评论
+        cmt.html = _MARK_DOWN_COMMENT.convert(bleach.clean(text=cmt.content, tags=[]))
         cmt.index = i + 1
     return dict(blog=blog, comments=comments)
 
@@ -363,6 +370,8 @@ async def api_create_comment(request, blogid, content):
     if not _user:
         raise ApiPermissionError('用户似乎不在登录状态.')
     content = content.strip()
+    # comment禁用html标签，进行html escape, 为避免&重复转义，对&不进行转义
+    content = content.replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;').replace('\'', '&apos;')
     if not content:
         raise ApiValueError('content', 'content of comment is empty.')
     comment = Comment(blog_id=blogid, user_id=_user.id, user_name=_user.name, user_image=_user.image, content=content)
