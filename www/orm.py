@@ -183,7 +183,7 @@ class ModelMetaclass(type):
 
 class Model(metaclass=ModelMetaclass):
     __table__, __primarykey__, __select__, __insert__, __update__, __remove__ = [None] * 6
-    __backmappings__, __mappings__, __fields__, __allfields__ = [[]] * 4
+    __backmappings__, __mappings__, __fields__, __allfields__ = [], [], [], []
 
     def __init__(self, **kwargs):
         for k in self.__allfields__:
