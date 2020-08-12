@@ -159,7 +159,7 @@ async def api_register(name, email, passwd):
     uid = generate_id()
     # salt: uid
     sh_pass = hashlib.sha1(('%s:%s' % (uid, passwd)).encode('utf-8')).hexdigest()
-    img = 'http://www.gravatar.com/avatar/%s?d=wavatar&s=120' % (hashlib.md5(email.encode('utf-8')).hexdigest())
+    img = 'https://www.gravatar.com/avatar/%s?d=wavatar&s=120' % (hashlib.md5(email.encode('utf-8')).hexdigest())
     user = User(id=uid, name=name.strip(), email=email, passwd=sh_pass, image=img)
     rs = await user.insert()
     if rs != 1:

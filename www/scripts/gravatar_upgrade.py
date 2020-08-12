@@ -1,4 +1,4 @@
-#!usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -19,13 +19,25 @@ blank: a transparent PNG image (border added to HTML below for demonstration pur
 
 import logging
 import asyncio
-import orm
 import re
-from model import User, Blog, Comment
+try:
+    import orm
+    from model import User, Blog, Comment
+except ImportError:
+    import sys
+    import os
+    print(os.getcwd())
+    sys.path.append(os.getcwd())
+    import orm
+    from model import User, Blog, Comment
 
 
 _REPP = r'(?<=[?&])d=[a-zA-Z]+(?=&|$)'   # &d=mm ?d=mp ?d=mp&  ...
 _REPL = 'd=wavatar'
+
+# modify http to https
+# _REPP = r'^http://'
+# _REPL = 'https://'
 
 
 def _replace_image(string):
