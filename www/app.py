@@ -99,7 +99,7 @@ def datetimeflt(val: float):
         return '%.f小时前' % (t // 3600)
     if t < 604800:
         return '%.f天前' % (t // 86400)
-    return datetime.datetime.fromtimestamp(t).strftime('%Y-%m-%d %H:%M:%S')
+    return datetime.datetime.fromtimestamp(val).strftime('%Y-%m-%d %H:%M:%S')
 
 
 async def index(request: web.Request):
