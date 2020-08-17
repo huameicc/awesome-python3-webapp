@@ -1,6 +1,7 @@
 # Python Web App
 ## 网站效果查看
 [boboriji][blogurl]
+
 [blogurl]: https://boboriji.com
 
 ## 项目简介
