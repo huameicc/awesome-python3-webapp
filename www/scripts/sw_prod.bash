@@ -3,4 +3,4 @@
 # favicon
 
 cp -vf /srv/awesome/prod/favicon/* ../static/icon/
-cp -vf /srv/awesome/prod/www/* ../ 
+cp -vf /srv/awesome/prod/www/* ../
